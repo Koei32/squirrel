@@ -1,0 +1,13 @@
+:global(body) {
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: hidden;
+    /* prevents the rubber bandy overscroll on trackpads */
+    overscroll-behavior: none;
+    margin: 0;
+}
+
+:global(input, textarea, [contenteditable="true"]) {
+    user-select: text;
+    -webkit-user-select: text;
+}
