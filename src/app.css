@@ -1,8 +1,7 @@
 body {
-    user-select: none;
-    -webkit-user-select: none;
-    overflow: hidden;
-    /* prevents the rubber bandy overscroll on trackpads */
-    overscroll-behavior: none;
-    margin: 0;
+	user-select: none;
+	-webkit-user-select: none;
+	/* prevents the rubber bandy overscroll on trackpads */
+	overscroll-behavior: none;
+	margin: 0;
 }

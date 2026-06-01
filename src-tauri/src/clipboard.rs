@@ -6,8 +6,18 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::mpsc;
 
+// pub trait ClipboardEvent {}
+
+#[derive(Clone, Serialize)]
+pub enum CbEventType {
+    Text,
+    Image,
+    File,
+}
+
 #[derive(Clone, Serialize)]
 pub struct ClipboardEvent {
+    event_type: CbEventType,
     content: String,
 }
 
@@ -25,8 +35,17 @@ impl ClipboardListener {
 
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) {
+        let content_type = self
+            .ctx
+            .available_formats()
+            .expect("no content on clipboard");
+        dbg!(content_type);
+
         if let Ok(content) = self.ctx.get_text() {
-            let _ = self.tx.send(ClipboardEvent { content });
+            let _ = self.tx.send(ClipboardEvent {
+                event_type: CbEventType::Text,
+                content,
+            });
         }
     }
 }
