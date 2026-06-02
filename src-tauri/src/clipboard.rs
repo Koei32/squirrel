@@ -82,3 +82,8 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>
     }
     Ok(())
 }
+
+#[tauri::command]
+async fn copy_content(app: tauri::AppHandle, window: tauri::Window, content: String) -> Result<()> {
+    Ok(())
+}

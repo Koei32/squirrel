@@ -1,6 +1,7 @@
 <script lang="ts">
     // import { invoke } from "@tauri-apps/api/core";
     import { listen } from "@tauri-apps/api/event";
+    import Entry from "../lib/components/Entry.svelte";
 
     type clipboardEvent = {
         content: string;
@@ -18,7 +19,7 @@
     <div>
         <h3>clipboard log:</h3>
         {#each cbLog as text}
-            <span style="font-family: monospace;">{text}</span>
+            <Entry content={text}/>
         {/each}
     </div>
 </main>
