@@ -78,7 +78,7 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>
     let state = app.state::<AppState>();
     while let Some(event) = rx.recv().await {
         let _ = app.emit("cb-text-copy", event.clone());
-        let _ = state.db.create_entry(event).await?;
+        state.db.create_entry(event).await?;
     }
     Ok(())
 }
