@@ -1,24 +1,38 @@
 //! clipboard stuff
+
+use anyhow::Result;
 use clipboard_rs::{
     Clipboard, ClipboardContext, ClipboardHandler, ClipboardWatcher, ClipboardWatcherContext,
 };
 use serde::Serialize;
-use tauri::{AppHandle, Emitter};
-use tokio::sync::mpsc;
+use sqlx::prelude::FromRow;
+use tauri::{AppHandle, Emitter, Manager};
+use tokio::sync::mpsc::{self, UnboundedReceiver};
 
-// pub trait ClipboardEvent {}
+use crate::AppState;
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Serialize, sqlx::Type)]
+#[sqlx(type_name = "TEXT", rename_all = "snake_case")]
 pub enum CbEventType {
     Text,
     Image,
     File,
 }
 
-#[derive(Clone, Serialize)]
+impl From<CbEventType> for String {
+    fn from(value: CbEventType) -> Self {
+        match value {
+            CbEventType::Text => "text".to_string(),
+            CbEventType::Image => "image".to_string(),
+            CbEventType::File => "file".to_string(),
+        }
+    }
+}
+
+#[derive(Clone, Serialize, FromRow)]
 pub struct ClipboardEvent {
-    event_type: CbEventType,
-    content: String,
+    pub event_type: CbEventType,
+    pub content: String,
 }
 
 pub struct ClipboardListener {
@@ -35,12 +49,6 @@ impl ClipboardListener {
 
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) {
-        let content_type = self
-            .ctx
-            .available_formats()
-            .expect("no content on clipboard");
-        dbg!(content_type);
-
         if let Ok(content) = self.ctx.get_text() {
             let _ = self.tx.send(ClipboardEvent {
                 event_type: CbEventType::Text,
@@ -50,9 +58,10 @@ impl ClipboardHandler for ClipboardListener {
     }
 }
 
-pub fn start_clipboard_listener(app: AppHandle) {
-    let (tx, mut rx) = mpsc::unbounded_channel::<ClipboardEvent>();
+pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
+    let (tx, rx) = mpsc::unbounded_channel::<ClipboardEvent>();
 
+    // spawn listnener
     std::thread::spawn(move || {
         let listener = ClipboardListener::new(tx);
         let mut watcher =
@@ -60,10 +69,16 @@ pub fn start_clipboard_listener(app: AppHandle) {
         watcher.add_handler(listener).start_watch();
     });
 
-    tauri::async_runtime::spawn(async move {
-        while let Some(event) = rx.recv().await {
-            println!("{}", event.content);
-            let _ = app.emit("cb-text-copy", event);
-        }
-    });
+    // spawn the event emitter
+    tokio::spawn(start_emitter(app, rx));
+    Ok(())
+}
+
+async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>) -> Result<()> {
+    let state = app.state::<AppState>();
+    while let Some(event) = rx.recv().await {
+        let _ = app.emit("cb-text-copy", event.clone());
+        let _ = state.db.create_entry(event).await?;
+    }
+    Ok(())
 }
