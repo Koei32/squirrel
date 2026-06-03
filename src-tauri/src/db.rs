@@ -1,8 +1,13 @@
 //! database and things like that
 
+use std::str::FromStr;
+
 use anyhow::{Ok, Result};
-use sqlx::SqlitePool;
-const DATABASE_URL: &str = "sqlite://userdata/data.db?mode=rwc";
+use sqlx::{
+    sqlite::{SqliteConnectOptions, SqlitePoolOptions},
+    ConnectOptions, SqlitePool,
+};
+const DATABASE_URL: &str = "sqlite://data.db?mode=rwc";
 
 use crate::clipboard::ClipboardEvent;
 
@@ -14,7 +19,8 @@ pub struct Database {
 impl Database {
     /// Returns a new database instance connected to `./userdata/data.db`
     pub async fn new() -> Result<Self> {
-        let pool = SqlitePool::connect(DATABASE_URL).await?;
+        let options = SqliteConnectOptions::from_str(DATABASE_URL)?.create_if_missing(true);
+        let pool = SqlitePoolOptions::new().connect_with(options).await?;
         sqlx::migrate!("./migrations").run(&pool).await?;
 
         Ok(Self { pool })
