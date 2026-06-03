@@ -4,21 +4,22 @@
 	import Entry from "../lib/components/Entry.svelte";
 	import type { cbEventType } from "../lib/types";
 	import { writeText, readText } from "@tauri-apps/plugin-clipboard-manager";
-	import { onMount } from "svelte";
 
 	let cbLog: Array<string> = $state([]);
 
 	listen<cbEventType>("cb-text-copy", async (type) => {
 		console.log(`event received`);
 		const text = await readText();
-		cbLog.push(text);
+		cbLog.unshift(text);
 	});
 </script>
 
 <main class="container">
-	<h1>Squirrel</h1>
 	<div>
-		<h3>clipboard log:</h3>
+		<p>Squirrel</p>
+	</div>
+	<div>
+		<p>clipboard log:</p>
 		{#each cbLog as text}
 			<Entry content={text} />
 		{/each}
@@ -44,22 +45,22 @@
 		margin: 0;
 		display: flex;
 		flex-direction: column;
+		padding: 0rem 2rem;
 	}
 
-	h1 {
-		text-align: center;
+	p {
+		color: #555;
 	}
 
 	div {
-		padding-left: 2rem;
 		display: flex;
 		flex-direction: column;
 	}
 
-	@media (prefers-color-scheme: dark) {
+	/* @media (prefers-color-scheme: dark) {
 		:root {
 			color: #f6f6f6;
 			background-color: #2f2f2f;
 		}
-	}
+	} */
 </style>

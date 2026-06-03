@@ -4,5 +4,6 @@
 	"printWidth": 100,
 	"plugins": ["prettier-plugin-svelte"],
 	"tabWidth": 4,
-	"overrides": [{ "files": "*.svelte", "options": { "parser": "svelte" } }]
+	"overrides": [{ "files": "*.svelte", "options": { "parser": "svelte" } }],
+	"bracketSameLine": true
 }
