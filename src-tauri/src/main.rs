@@ -25,8 +25,9 @@ async fn run_tauri_app() -> Result<()> {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_prevent_default::init())
-        .invoke_handler(tauri::generate_handler![])
+        .invoke_handler(tauri::generate_handler![clipboard::copy_content])
         .run(tauri::generate_context!())?;
 
     Ok(())

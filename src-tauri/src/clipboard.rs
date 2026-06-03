@@ -4,15 +4,16 @@ use anyhow::Result;
 use clipboard_rs::{
     Clipboard, ClipboardContext, ClipboardHandler, ClipboardWatcher, ClipboardWatcherContext,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 
 use crate::AppState;
 
-#[derive(Clone, Serialize, sqlx::Type)]
+#[derive(Clone, Serialize, Deserialize, sqlx::Type, Copy)]
 #[sqlx(type_name = "TEXT", rename_all = "snake_case")]
+#[serde(rename_all = "camelCase")]
 pub enum CbEventType {
     Text,
     Image,
@@ -49,10 +50,10 @@ impl ClipboardListener {
 
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) {
-        if let Ok(content) = self.ctx.get_text() {
+        if let Ok(_) = self.ctx.get_text() {
             let _ = self.tx.send(ClipboardEvent {
                 event_type: CbEventType::Text,
-                content,
+                content: "".to_string(),
             });
         }
     }
@@ -77,13 +78,15 @@ pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
 async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>) -> Result<()> {
     let state = app.state::<AppState>();
     while let Some(event) = rx.recv().await {
-        let _ = app.emit("cb-text-copy", event.clone());
+        let _ = app.emit("cb-text-copy", event.event_type);
+        println!("emitted event");
         state.db.create_entry(event).await?;
+        println!("added to db");
     }
     Ok(())
 }
 
 #[tauri::command]
-async fn copy_content(app: tauri::AppHandle, window: tauri::Window, content: String) -> Result<()> {
-    Ok(())
+pub fn copy_content(app: tauri::AppHandle, window: tauri::Window, content: String) {
+    println!("copy_content called");
 }
