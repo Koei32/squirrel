@@ -2,10 +2,10 @@
 	import { invoke } from "@tauri-apps/api/core";
 	import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
-	const { content } = $props();
+	const { content, type } = $props();
 
 	let isCopied = $state(false);
-	let textSpan: HTMLSpanElement | null = $state(null);
+	let textSpan: HTMLParagraphElement | null = $state(null);
 
 	function handleCopyClick() {
 		isCopied = true;
@@ -34,9 +34,12 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="container" onclick={focusOnContent} data-selectable="true">
-	<span bind:this={textSpan}>
-		{content}
-	</span>
+	<div class="content">
+		<span class="type">{type}</span>
+		<p bind:this={textSpan}>
+			{content}
+		</p>
+	</div>
 	<button onclick={handleCopyClick}>
 		{#if isCopied}
 			✓
@@ -47,30 +50,44 @@
 </div>
 
 <style>
-	div {
+	.content {
+		display: flex;
+		width: 80%;
+		flex-direction: column;
+	}
+
+	.container {
 		font-size: 0.75rem;
 		background-color: #eee;
+		border: 1px solid #bbb;
 		border-radius: 10px;
 		/* height: 2.5rem; */
 		padding: 0.5rem 0.75rem;
 		/* width: 80%; */
 		display: flex;
+		/* flex-direction: column; */
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 0.31rem;
 	}
 
-	span {
+	.type {
+		font-family: monospace;
+		font-size: 0.5rem;
+		color: #555;
+	}
+
+	p {
 		/* background-color: #fff; */
 		/* height: 1rem; */
-		/* width: 100%;
-		padding: 0.5rem;
+		/* padding: 0.5rem;
 		margin-right: 1rem;
 		border-radius: 5px; */
 		user-select: all;
-		white-space: nowrap;
-		text-overflow: ellipsis;
+		/* white-space: nowrap; */
+		/* text-overflow: ellipsis; */
 		overflow: hidden;
+		white-space: pre;
 	}
 
 	button {
@@ -90,5 +107,9 @@
 	button:hover {
 		transition: all 200ms;
 		box-shadow: 0px 1px 3px rgb(192, 192, 192);
+	}
+
+	button:active {
+		background-color: #eee;
 	}
 </style>

@@ -2,7 +2,7 @@
 	// import { invoke } from "@tauri-apps/api/core";
 	import { listen } from "@tauri-apps/api/event";
 	import Entry from "../lib/components/Entry.svelte";
-	import type { cbEventType } from "../lib/types";
+	import { cbEventType } from "../lib/types";
 	import { writeText, readText } from "@tauri-apps/plugin-clipboard-manager";
 
 	let cbLog: Array<string> = $state([]);
@@ -10,7 +10,8 @@
 	listen<cbEventType>("cb-text-copy", async (type) => {
 		console.log(`event received`);
 		const text = await readText();
-		cbLog.unshift(text);
+		console.log(text);
+		cbLog.unshift(text.trim());
 	});
 </script>
 
@@ -19,9 +20,9 @@
 		<p>Squirrel</p>
 	</div>
 	<div>
-		<p>clipboard log:</p>
+		<p><small>Clipboard history:</small></p>
 		{#each cbLog as text}
-			<Entry content={text} />
+			<Entry content={text} type={cbEventType.Text} />
 		{/each}
 	</div>
 </main>
