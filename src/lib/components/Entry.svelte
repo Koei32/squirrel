@@ -89,7 +89,6 @@
 
 	button:hover {
 		transition: all 200ms;
-		outline: 1px solid black;
 		box-shadow: 0px 1px 3px rgb(192, 192, 192);
 	}
 </style>
