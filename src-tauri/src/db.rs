@@ -2,10 +2,10 @@
 
 use std::str::FromStr;
 
-use anyhow::{Ok, Result};
+use anyhow::Result;
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
-    ConnectOptions, SqlitePool,
+    SqlitePool,
 };
 const DATABASE_URL: &str = "sqlite://data.db?mode=rwc";
 
@@ -50,5 +50,18 @@ impl Database {
             .fetch_all(&self.pool)
             .await?;
         Ok(results)
+    }
+
+    /// Clears the whole database. (!)
+    pub async fn clear_entries(&self) -> Result<()> {
+        sqlx::query(
+            "
+            DELETE FROM clipboard;
+        ",
+        )
+        .execute(&self.pool)
+        .await?;
+
+        Ok(())
     }
 }

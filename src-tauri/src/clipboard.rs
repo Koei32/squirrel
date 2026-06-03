@@ -85,6 +85,17 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>
 }
 
 #[tauri::command]
-pub fn copy_content(app: tauri::AppHandle, window: tauri::Window, content: String) {
+pub fn copy_content(app: tauri::AppHandle, content: String) {
     println!("copy_content called");
+}
+
+#[tauri::command(async)]
+pub async fn clear_history(app: tauri::AppHandle) -> std::result::Result<(), ()> {
+    app.state::<AppState>()
+        .db
+        .clear_entries()
+        .await
+        .expect("clear failed");
+
+    Ok(())
 }
