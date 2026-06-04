@@ -85,6 +85,9 @@ impl ClipboardListener {
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) {
         if let Ok(content) = self.ctx.get_text() {
+            if content.trim() == "" {
+                return;
+            }
             // if the copied item was the same as the last item, do nothing
             if self.calculate_hash(&content) == self.last_hash.unwrap_or_default() {
                 println!("repeat!");
