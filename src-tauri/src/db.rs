@@ -40,7 +40,7 @@ impl Database {
         .execute(&self.pool)
         .await
         .expect("failed insertion");
-
+        println!("inserted successfully");
         Ok(())
     }
 
@@ -61,7 +61,7 @@ impl Database {
         )
         .execute(&self.pool)
         .await?;
-
+        println!("executed delete query");
         Ok(())
     }
 }

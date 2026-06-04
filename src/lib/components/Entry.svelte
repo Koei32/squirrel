@@ -1,15 +1,14 @@
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/core";
-	import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 
-	const { content, type } = $props();
+	const { type, content, timestamp } = $props();
 
 	let isCopied = $state(false);
 	let textSpan: HTMLParagraphElement | null = $state(null);
 
 	function handleCopyClick() {
 		isCopied = true;
-		invoke("copy_content", content);
+		invoke("copy_content");
 
 		setTimeout(() => {
 			isCopied = false;
@@ -33,10 +32,10 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="container" onclick={focusOnContent} data-selectable="true">
+<div class="container">
 	<div class="content">
-		<span class="type">{type}</span>
-		<p bind:this={textSpan}>
+		<span class="type">{new Date(timestamp).toLocaleString()}</span>
+		<p bind:this={textSpan} data-selectable="true">
 			{content}
 		</p>
 	</div>
@@ -57,12 +56,12 @@
 	}
 
 	.container {
-		font-size: 0.75rem;
+		font-size: 0.8rem;
 		background-color: #eee;
 		border: 1px solid #bbb;
 		border-radius: 10px;
 		/* height: 2.5rem; */
-		padding: 0.5rem 0.75rem;
+		padding: 0.75rem;
 		/* width: 80%; */
 		display: flex;
 		/* flex-direction: column; */
@@ -73,21 +72,18 @@
 
 	.type {
 		font-family: monospace;
-		font-size: 0.5rem;
+		font-size: 0.6rem;
 		color: #555;
 	}
 
 	p {
-		/* background-color: #fff; */
-		/* height: 1rem; */
-		/* padding: 0.5rem;
-		margin-right: 1rem;
-		border-radius: 5px; */
-		user-select: all;
-		/* white-space: nowrap; */
-		/* text-overflow: ellipsis; */
-		overflow: hidden;
-		white-space: pre;
+		margin-bottom: 0;
+		max-height: 12rem;
+		user-select: text;
+		overflow-y: auto;
+		overflow-x: auto;
+		overflow-wrap: break-word;
+		white-space: pre-wrap;
 	}
 
 	button {
