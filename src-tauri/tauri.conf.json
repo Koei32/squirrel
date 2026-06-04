@@ -15,9 +15,10 @@
 				"title": "Squirrel",
 				"width": 600,
 				"height": 400,
-				"resizable": true,
+				"resizable": false,
 				"fullscreen": false,
-				"devtools": false
+				"devtools": false,
+				"scrollBarStyle": "fluentOverlay"
 			}
 		],
 		"security": {

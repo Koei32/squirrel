@@ -1,13 +1,18 @@
 <script lang="ts">
-	import { listen } from "@tauri-apps/api/event";
+	import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 	import Entry from "../lib/components/Entry.svelte";
 	import type { cbEventNotice, clipboardEvent } from "../lib/types";
 	import { cbEventType } from "../lib/types";
 	import { writeText, readText } from "@tauri-apps/plugin-clipboard-manager";
 	import { invoke } from "@tauri-apps/api/core";
+	import { getCurrentWindow } from "@tauri-apps/api/window";
+	import { onMount } from "svelte";
+	import { TrayIcon, type TrayIconOptions } from "@tauri-apps/api/tray";
+	import { defaultWindowIcon } from "@tauri-apps/api/app";
+	import { Menu } from "@tauri-apps/api/menu";
+	import { Image } from "@tauri-apps/api/image";
 
 	let cbLog: Array<clipboardEvent> = $state([]);
-	let count = $state(0);
 
 	listen<cbEventNotice>("cb-text-copy", async (event) => {
 		console.log(`${event.payload.event_type} event received at ${event.payload.timestamp}`);
@@ -26,11 +31,52 @@
 		});
 		cbLog = [];
 	}
+
+	onMount(() => {
+		let unlisten: UnlistenFn | undefined;
+
+		const initSetup = async () => {
+			const window = getCurrentWindow();
+			// system tray stuff
+			const menu = await Menu.new({
+				items: [
+					{
+						id: "show",
+						text: "Show Squirrel",
+						action: async () => {
+							window.setFocus();
+							await window.show();
+						},
+					},
+				],
+			});
+			const trayOptions: TrayIconOptions = {
+				// icon: await Image.fromPath("F:\\misc\\squirrel\\src-tauri\\icons\\icon.ico"),
+				menu,
+			};
+			await TrayIcon.new(trayOptions);
+
+			// close event interception
+			unlisten = await window.onCloseRequested(async (event) => {
+				event.preventDefault();
+				await window.hide();
+			});
+		};
+
+		initSetup();
+
+		// cleanup handler
+		return () => {
+			if (unlisten) {
+				unlisten();
+			}
+		};
+	});
 </script>
 
 <main class="container">
 	<div>
-		<p>Squirrel {count}</p>
+		<p>Squirrel</p>
 	</div>
 	<div>
 		<div class="subhead">
