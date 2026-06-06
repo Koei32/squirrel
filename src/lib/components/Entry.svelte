@@ -26,8 +26,8 @@
 		}, 2000);
 	}
 
+	/*
 	function focusOnContent(event: MouseEvent) {
-		const target = event.target as HTMLElement;
 		if (textSpan) {
 			const selection = window.getSelection();
 			const range = document.createRange();
@@ -39,6 +39,7 @@
 			}
 		}
 	}
+	*/
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -72,11 +73,8 @@
 		background-color: #eee;
 		border: 1px solid #bbb;
 		border-radius: 3px;
-		/* height: 2.5rem; */
 		padding: 0.75rem;
-		/* width: 80%; */
 		display: flex;
-		/* flex-direction: column; */
 		justify-content: space-between;
 		align-items: center;
 		margin-bottom: 0.1rem;
@@ -87,7 +85,6 @@
 	}
 
 	.entry-container:focus {
-		/* background-color: ; */
 		background-color: #ddd;
 		outline: 1px solid grey;
 	}
@@ -117,7 +114,6 @@
 
 	button {
 		all: unset;
-		/* font-size: 0.75rem; */
 		padding: 0.5rem;
 		height: 1rem;
 		cursor: pointer;

@@ -14,7 +14,6 @@
 
 	let cbLog: Array<clipboardEvent> = $state([]);
 	let entries: Array<Entry> = $state([]);
-	let count = $state(0);
 	let activeIndex = $state(-1);
 	let containerElement = $state<HTMLElement | null>(null);
 
@@ -125,7 +124,7 @@
 	data-selectable="true"
 	bind:this={containerElement}>
 	<div>
-		<p>Squirrel {count}</p>
+		<p>Squirrel</p>
 	</div>
 	<div>
 		<div class="subhead">
