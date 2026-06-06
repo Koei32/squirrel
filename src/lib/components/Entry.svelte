@@ -1,12 +1,23 @@
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/core";
 
-	const { type, content, timestamp } = $props();
+	const { type, content, timestamp, active = false, clickHandler } = $props();
 
 	let isCopied = $state(false);
 	let textSpan: HTMLParagraphElement | null = $state(null);
+	let element: HTMLElement | null = $state(null);
 
-	function handleCopyClick() {
+	export function focusElement() {
+		if (element) {
+			element.focus();
+		}
+	}
+
+	export function handlePaste() {
+		invoke("paste_content", { content: content });
+	}
+
+	export function handleCopy() {
 		isCopied = true;
 		invoke("copy_content");
 
@@ -32,14 +43,21 @@
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="container">
+<div
+	class="entry-container list-item"
+	bind:this={element}
+	class:active
+	tabindex="-1"
+	role="option"
+	aria-selected={active}
+	onclick={clickHandler}>
 	<div class="content">
-		<span class="type">{new Date(timestamp).toLocaleString()}</span>
+		<span class="time">{new Date(timestamp).toLocaleString()}</span>
 		<p bind:this={textSpan} data-selectable="true">
 			{content}
 		</p>
 	</div>
-	<button onclick={handleCopyClick}>
+	<button onclick={handleCopy}>
 		{#if isCopied}
 			✓
 		{:else}
@@ -49,17 +67,11 @@
 </div>
 
 <style>
-	.content {
-		display: flex;
-		width: 80%;
-		flex-direction: column;
-	}
-
-	.container {
+	.entry-container {
 		font-size: 0.8rem;
 		background-color: #eee;
 		border: 1px solid #bbb;
-		border-radius: 10px;
+		border-radius: 3px;
 		/* height: 2.5rem; */
 		padding: 0.75rem;
 		/* width: 80%; */
@@ -67,17 +79,34 @@
 		/* flex-direction: column; */
 		justify-content: space-between;
 		align-items: center;
-		margin-bottom: 0.31rem;
+		margin-bottom: 0.1rem;
 	}
 
-	.type {
+	.entry-container:active {
+		background-color: #ddd;
+	}
+
+	.entry-container:focus {
+		/* background-color: ; */
+		background-color: #ddd;
+		outline: 1px solid grey;
+	}
+
+	.content {
+		display: flex;
+		width: 80%;
+		flex-direction: column;
+	}
+
+	.time {
 		font-family: monospace;
 		font-size: 0.6rem;
-		color: #555;
+		color: #bbb;
 	}
 
 	p {
 		margin-bottom: 0;
+		margin-top: 0.25rem;
 		max-height: 12rem;
 		user-select: text;
 		overflow-y: auto;

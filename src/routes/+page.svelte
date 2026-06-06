@@ -2,21 +2,24 @@
 	import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 	import Entry from "../lib/components/Entry.svelte";
 	import type { cbEventNotice, clipboardEvent } from "../lib/types";
-	import { cbEventType } from "../lib/types";
-	import { writeText, readText } from "@tauri-apps/plugin-clipboard-manager";
+	import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 	import { invoke } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 	import { onMount } from "svelte";
 	import { TrayIcon, type TrayIconOptions } from "@tauri-apps/api/tray";
-	import { defaultWindowIcon } from "@tauri-apps/api/app";
 	import { Menu } from "@tauri-apps/api/menu";
-	import { Image } from "@tauri-apps/api/image";
+	import { register } from "@tauri-apps/plugin-global-shortcut";
+
+	const window = getCurrentWindow();
 
 	let cbLog: Array<clipboardEvent> = $state([]);
+	let entries: Array<Entry> = $state([]);
+	let count = $state(0);
+	let activeIndex = $state(-1);
+	let containerElement = $state<HTMLElement | null>(null);
 
 	listen<cbEventNotice>("cb-text-copy", async (event) => {
 		console.log(`${event.payload.event_type} event received at ${event.payload.timestamp}`);
-		// count++;
 		const text = await readText();
 		cbLog.unshift({
 			event_type: event.payload.event_type,
@@ -32,11 +35,51 @@
 		cbLog = [];
 	}
 
+	function handleNavigation(event: KeyboardEvent) {
+		if (entries.length === 0) return;
+		event.preventDefault();
+		switch (event.key) {
+			case "ArrowDown": {
+				activeIndex = (activeIndex + 1) % cbLog.length;
+				const targetComponent = entries[activeIndex];
+				if (targetComponent) {
+					targetComponent.focusElement();
+				}
+				break;
+			}
+			case "ArrowUp": {
+				activeIndex = (activeIndex - 1 + cbLog.length) % cbLog.length;
+				const targetComponent = entries[activeIndex];
+				if (targetComponent) {
+					targetComponent.focusElement();
+				}
+				break;
+			}
+			case "Enter": {
+				window.hide();
+				setTimeout(() => {
+					entries[activeIndex].handlePaste();
+				}, 50);
+				break;
+			}
+			case "Escape": {
+				window.hide();
+				break;
+			}
+		}
+	}
+
 	onMount(() => {
 		let unlisten: UnlistenFn | undefined;
 
 		const initSetup = async () => {
-			const window = getCurrentWindow();
+			// register shortcuts
+			await register("CommandOrControl+Shift+V", (event) => {
+				if (event.state == "Pressed") {
+					window.show();
+				}
+			});
+
 			// system tray stuff
 			const menu = await Menu.new({
 				items: [
@@ -74,17 +117,28 @@
 	});
 </script>
 
-<main class="container">
+<svelte:window on:keydown={handleNavigation} />
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<main
+	class="container"
+	// onkeydown={handleKeyDown}
+	data-selectable="true"
+	bind:this={containerElement}>
 	<div>
-		<p>Squirrel</p>
+		<p>Squirrel {count}</p>
 	</div>
 	<div>
 		<div class="subhead">
 			<p><small>Clipboard history:</small></p>
 			<button onclick={clearHistory}>Clear History (permanent!)</button>
 		</div>
-		{#each cbLog as event}
-			<Entry content={event.content} type={event.event_type} timestamp={event.timestamp} />
+		{#each cbLog as event, index}
+			<Entry
+				bind:this={entries[index]}
+				content={event.content}
+				type={event.event_type}
+				timestamp={event.timestamp}
+				clickHandler={() => {}} />
 		{/each}
 	</div>
 </main>
@@ -108,7 +162,7 @@
 		margin: 0;
 		display: flex;
 		flex-direction: column;
-		padding: 0rem 2rem;
+		padding: 0rem 1rem;
 	}
 
 	p {

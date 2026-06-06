@@ -1,17 +1,17 @@
 //! clipboard stuff
 
+use crate::AppState;
 use anyhow::Result;
 use chrono::Local;
 use clipboard_rs::{
     Clipboard, ClipboardContext, ClipboardHandler, ClipboardWatcher, ClipboardWatcherContext,
 };
+use enigo::{Enigo, Keyboard, Settings};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use std::hash::{DefaultHasher, Hash, Hasher};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
-
-use crate::AppState;
 
 #[derive(Clone, Debug, Serialize, Deserialize, sqlx::Type, Copy)]
 #[sqlx(type_name = "TEXT", rename_all = "snake_case")]
@@ -136,8 +136,15 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>
 }
 
 #[tauri::command(async)]
-pub async fn copy_content(app: tauri::AppHandle) {
+pub async fn copy_content() {
     println!("copy_content called");
+}
+
+#[tauri::command]
+pub fn paste_content(app: tauri::AppHandle, content: String) {
+    println!("paste_content called");
+    let mut keyboard = Enigo::new(&Settings::default()).expect("Failed to initialize Enigo");
+    keyboard.text(&content).expect("Failed to paste content.");
 }
 
 #[tauri::command(async)]
