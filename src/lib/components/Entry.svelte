@@ -13,12 +13,12 @@
 	}
 
 	export function handlePaste() {
-		invoke("paste_content", { content: content });
+		invoke("paste_item", { content: content });
 	}
 
 	export function handleCopy() {
 		isCopied = true;
-		invoke("copy_content");
+		invoke("copy_item", { content: content });
 
 		setTimeout(() => {
 			isCopied = false;

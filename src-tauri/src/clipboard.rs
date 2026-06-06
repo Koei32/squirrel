@@ -9,7 +9,10 @@ use clipboard_rs::{
 use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::{
+    hash::{DefaultHasher, Hash, Hasher},
+    sync::atomic::Ordering::SeqCst,
+};
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 
@@ -62,15 +65,18 @@ pub struct ClipboardListener {
     tx: mpsc::UnboundedSender<ClipboardEvent>,
     /// Content hash of the last event (used to avoid consecutive duplicates)
     last_hash: Option<u64>,
+    /// App handle
+    app: AppHandle,
 }
 
 impl ClipboardListener {
-    pub fn new(tx: mpsc::UnboundedSender<ClipboardEvent>) -> Self {
+    pub fn new(tx: mpsc::UnboundedSender<ClipboardEvent>, app: AppHandle) -> Self {
         let ctx = ClipboardContext::new().expect("Failed to create clipboard context.");
         ClipboardListener {
             ctx,
             tx,
             last_hash: None,
+            app,
         }
     }
 
@@ -84,6 +90,11 @@ impl ClipboardListener {
 
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) {
+        if self.app.state::<AppState>().skip_event.load(SeqCst) {
+            self.app.state::<AppState>().skip_event.store(false, SeqCst);
+            return;
+        }
+
         if let Ok(content) = self.ctx.get_text() {
             if content.trim() == "" {
                 return;
@@ -107,17 +118,17 @@ impl ClipboardHandler for ClipboardListener {
 
 pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
     let (tx, rx) = mpsc::unbounded_channel::<ClipboardEvent>();
-
+    let app_handle = app.clone();
     // spawn listnener
     std::thread::spawn(move || {
-        let listener = ClipboardListener::new(tx);
+        let listener = ClipboardListener::new(tx, app);
         let mut watcher =
             ClipboardWatcherContext::new().expect("Failed to create cb watcher context");
         watcher.add_handler(listener).start_watch();
     });
 
     // spawn the event emitter
-    tokio::spawn(start_emitter(app, rx));
+    tokio::spawn(start_emitter(app_handle, rx));
     Ok(())
 }
 
@@ -137,14 +148,18 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>
 // TODO: make a custom error type to return from tauri commands so that i dont
 // have to map_err everywhere like an amateur
 
-#[tauri::command(async)]
-pub async fn copy_content() {
-    println!("copy_content called");
+#[tauri::command]
+pub fn copy_item(app: tauri::AppHandle, content: String) -> std::result::Result<(), String> {
+    app.state::<AppState>().skip_event.store(true, SeqCst);
+    let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
+    cb.set_text(content).map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
-pub fn paste_content(app: tauri::AppHandle, content: String) -> std::result::Result<(), String> {
+pub fn paste_item(app: tauri::AppHandle, content: String) -> std::result::Result<(), String> {
     println!("paste_content called");
+    app.state::<AppState>().skip_event.store(true, SeqCst);
     let mut keyboard = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
     let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
     cb.set_text(content).map_err(|e| e.to_string())?;
