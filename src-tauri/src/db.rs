@@ -1,12 +1,11 @@
 //! database and things like that
 
-use std::str::FromStr;
-
 use anyhow::Result;
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     SqlitePool,
 };
+use std::str::FromStr;
 const DATABASE_URL: &str = "sqlite://data.db?mode=rwc";
 
 use crate::clipboard::ClipboardEvent;
@@ -40,7 +39,6 @@ impl Database {
         .execute(&self.pool)
         .await
         .expect("failed insertion");
-        println!("inserted successfully");
         Ok(())
     }
 
@@ -61,7 +59,6 @@ impl Database {
         )
         .execute(&self.pool)
         .await?;
-        println!("executed delete query");
         Ok(())
     }
 }

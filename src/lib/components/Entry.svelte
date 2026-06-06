@@ -4,7 +4,6 @@
 	const { type, content, timestamp, active = false, clickHandler } = $props();
 
 	let isCopied = $state(false);
-	let textSpan: HTMLParagraphElement | null = $state(null);
 	let element: HTMLElement | null = $state(null);
 
 	export function focusElement() {
@@ -25,21 +24,6 @@
 			isCopied = false;
 		}, 2000);
 	}
-
-	/*
-	function focusOnContent(event: MouseEvent) {
-		if (textSpan) {
-			const selection = window.getSelection();
-			const range = document.createRange();
-
-			if (selection) {
-				range.selectNodeContents(textSpan);
-				selection.removeAllRanges();
-				selection.addRange(range);
-			}
-		}
-	}
-	*/
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -54,7 +38,7 @@
 	onclick={clickHandler}>
 	<div class="content">
 		<span class="time">{new Date(timestamp).toLocaleString()}</span>
-		<p bind:this={textSpan} data-selectable="true">
+		<p data-selectable="true">
 			{content}
 		</p>
 	</div>

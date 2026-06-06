@@ -90,7 +90,6 @@ impl ClipboardHandler for ClipboardListener {
             }
             // if the copied item was the same as the last item, do nothing
             if self.calculate_hash(&content) == self.last_hash.unwrap_or_default() {
-                println!("repeat!");
                 return;
             }
 
@@ -99,7 +98,6 @@ impl ClipboardHandler for ClipboardListener {
                 content,
                 timestamp: Local::now().to_rfc3339(),
             };
-            dbg!(&event);
             self.last_hash = Some(self.calculate_hash(&event.content));
             let _ = self.tx.send(event);
         }
@@ -141,7 +139,7 @@ pub async fn copy_content() {
 }
 
 #[tauri::command]
-pub fn paste_content(app: tauri::AppHandle, content: String) {
+pub fn paste_content(content: String) {
     println!("paste_content called");
     let mut keyboard = Enigo::new(&Settings::default()).expect("Failed to initialize Enigo");
     keyboard.text(&content).expect("Failed to paste content.");
@@ -154,6 +152,5 @@ pub async fn clear_history(app: tauri::AppHandle) -> std::result::Result<(), Str
         .clear_entries()
         .await
         .map_err(|e| e.to_string())?;
-    println!("cleared data");
     Ok(())
 }

@@ -18,7 +18,6 @@
 	let containerElement = $state<HTMLElement | null>(null);
 
 	listen<cbEventNotice>("cb-text-copy", async (event) => {
-		console.log(`${event.payload.event_type} event received at ${event.payload.timestamp}`);
 		const text = await readText();
 		cbLog.unshift({
 			event_type: event.payload.event_type,
@@ -93,7 +92,6 @@
 				],
 			});
 			const trayOptions: TrayIconOptions = {
-				// icon: await Image.fromPath("F:\\misc\\squirrel\\src-tauri\\icons\\icon.ico"),
 				menu,
 			};
 			await TrayIcon.new(trayOptions);
@@ -118,11 +116,7 @@
 
 <svelte:window on:keydown={handleNavigation} />
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<main
-	class="container"
-	// onkeydown={handleKeyDown}
-	data-selectable="true"
-	bind:this={containerElement}>
+<main class="container" data-selectable="true" bind:this={containerElement}>
 	<div>
 		<p>Squirrel</p>
 	</div>
@@ -146,14 +140,8 @@
 	:root {
 		font-family: sans-serif;
 		font-size: 16px;
-
 		color: #0f0f0f;
 		background-color: #f6f6f6;
-
-		font-synthesis: none;
-		text-rendering: optimizeLegibility;
-		-webkit-font-smoothing: antialiased;
-		-moz-osx-font-smoothing: grayscale;
 		-webkit-text-size-adjust: 100%;
 	}
 

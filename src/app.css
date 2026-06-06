@@ -1,5 +1,7 @@
+/* eslint-disable css/use-baseline */
 body {
 	user-select: none;
+	-moz-user-select: none;
 	-webkit-user-select: none;
 	/* prevents the rubber bandy overscroll on trackpads */
 	overscroll-behavior: none;
