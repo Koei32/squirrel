@@ -6,7 +6,7 @@ use chrono::Local;
 use clipboard_rs::{
     Clipboard, ClipboardContext, ClipboardHandler, ClipboardWatcher, ClipboardWatcherContext,
 };
-use enigo::{Enigo, Keyboard, Settings};
+use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use std::hash::{DefaultHasher, Hash, Hasher};
@@ -88,6 +88,7 @@ impl ClipboardHandler for ClipboardListener {
             if content.trim() == "" {
                 return;
             }
+
             // if the copied item was the same as the last item, do nothing
             if self.calculate_hash(&content) == self.last_hash.unwrap_or_default() {
                 return;
@@ -133,16 +134,40 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>
     Ok(())
 }
 
+// TODO: make a custom error type to return from tauri commands so that i dont
+// have to map_err everywhere like an amateur
+
 #[tauri::command(async)]
 pub async fn copy_content() {
     println!("copy_content called");
 }
 
 #[tauri::command]
-pub fn paste_content(content: String) {
+pub fn paste_content(app: tauri::AppHandle, content: String) -> std::result::Result<(), String> {
     println!("paste_content called");
-    let mut keyboard = Enigo::new(&Settings::default()).expect("Failed to initialize Enigo");
-    keyboard.text(&content).expect("Failed to paste content.");
+    let mut keyboard = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
+    let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
+    cb.set_text(content).map_err(|e| e.to_string())?;
+
+    //  we'll think about mac some other day
+    // #[cfg(target_os = "macos")]
+    // let modifier = Key::Meta;
+
+    #[cfg(not(target_os = "macos"))]
+    let modifier = Key::Control;
+    keyboard
+        .key(modifier, Direction::Press)
+        .map_err(|e| e.to_string())?;
+    keyboard
+        .key(Key::Unicode('v'), Direction::Press)
+        .map_err(|e| e.to_string())?;
+    keyboard
+        .key(Key::Unicode('v'), Direction::Release)
+        .map_err(|e| e.to_string())?;
+    keyboard
+        .key(modifier, Direction::Release)
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command(async)]
