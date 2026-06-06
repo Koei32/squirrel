@@ -2,7 +2,7 @@
 	import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 	import Entry from "../lib/components/Entry.svelte";
 	import type { cbEventNotice, clipboardEvent } from "../lib/types";
-	import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
+	import { readText } from "@tauri-apps/plugin-clipboard-manager";
 	import { invoke } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 	import { onMount } from "svelte";
@@ -14,8 +14,7 @@
 
 	let cbLog: Array<clipboardEvent> = $state([]);
 	let entries: Array<Entry> = $state([]);
-	let activeIndex = $state(-1);
-	let containerElement = $state<HTMLElement | null>(null);
+	let activeIndex = $state(0);
 
 	listen<cbEventNotice>("cb-text-copy", async (event) => {
 		const text = await readText();
@@ -31,26 +30,28 @@
 			console.log(r);
 		});
 		cbLog = [];
+		entries = [];
 	}
 
 	function handleNavigation(event: KeyboardEvent) {
+		if (event.key == "Escape") {
+			event.preventDefault();
+			window.hide();
+			return;
+		}
 		if (entries.length === 0) return;
-		event.preventDefault();
+
 		switch (event.key) {
 			case "ArrowDown": {
+				event.preventDefault();
 				activeIndex = (activeIndex + 1) % cbLog.length;
-				const targetComponent = entries[activeIndex];
-				if (targetComponent) {
-					targetComponent.focusElement();
-				}
+				focusEntry();
 				break;
 			}
 			case "ArrowUp": {
+				event.preventDefault();
 				activeIndex = (activeIndex - 1 + cbLog.length) % cbLog.length;
-				const targetComponent = entries[activeIndex];
-				if (targetComponent) {
-					targetComponent.focusElement();
-				}
+				focusEntry();
 				break;
 			}
 			case "Enter": {
@@ -60,10 +61,13 @@
 				}, 50);
 				break;
 			}
-			case "Escape": {
-				window.hide();
-				break;
-			}
+		}
+	}
+
+	function focusEntry() {
+		const targetComponent = entries[activeIndex];
+		if (targetComponent) {
+			targetComponent.focusElement();
 		}
 	}
 
@@ -71,14 +75,16 @@
 		let unlisten: UnlistenFn | undefined;
 
 		const initSetup = async () => {
-			// register shortcuts
+			// register shortcut to show the window
 			await register("CommandOrControl+Shift+V", (event) => {
 				if (event.state == "Pressed") {
 					window.show();
+					window.unminimize();
+					window.setFocus();
 				}
 			});
 
-			// system tray stuff
+			// system tray
 			const menu = await Menu.new({
 				items: [
 					{
@@ -96,7 +102,7 @@
 			};
 			await TrayIcon.new(trayOptions);
 
-			// close event interception
+			// intercept close event to hide the window instead
 			unlisten = await window.onCloseRequested(async (event) => {
 				event.preventDefault();
 				await window.hide();
@@ -116,7 +122,7 @@
 
 <svelte:window on:keydown={handleNavigation} />
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<main class="container" data-selectable="true" bind:this={containerElement}>
+<main class="container" data-selectable="true">
 	<div>
 		<p>Squirrel</p>
 	</div>
@@ -131,7 +137,9 @@
 				content={event.content}
 				type={event.event_type}
 				timestamp={event.timestamp}
-				clickHandler={() => {}} />
+				clickHandler={() => {
+					activeIndex = index;
+				}} />
 		{/each}
 	</div>
 </main>
