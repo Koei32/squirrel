@@ -1,7 +1,8 @@
 CREATE TABLE clipboard (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    type TEXT CHECK(type IN ('text', 'image', 'file')),
-    content TEXT
+    event_type TEXT CHECK(event_type IN ('text', 'image', 'file')),
+    content TEXT,
+    timestamp TEXT
 ) STRICT;
 
 

@@ -5,12 +5,14 @@ export enum cbEventType {
 }
 
 export type clipboardEvent = {
+	id: number;
 	event_type: cbEventType;
 	content: string;
 	timestamp: string;
 };
 
 export type cbEventNotice = {
+	id: number;
 	event_type: cbEventType;
 	timestamp: string;
 };

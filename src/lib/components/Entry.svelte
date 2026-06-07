@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/core";
 
-	const { type, content, timestamp, active = false, clickHandler } = $props();
+	const { cbEvent, active = false, clickHandler } = $props();
 
 	let isCopied = $state(false);
 	let element: HTMLElement | null = $state(null);
@@ -13,12 +13,12 @@
 	}
 
 	export function handlePaste() {
-		invoke("paste_item", { content: content });
+		invoke("paste_item", { id: cbEvent.id });
 	}
 
 	export function handleCopy() {
 		isCopied = true;
-		invoke("copy_item", { content: content });
+		invoke("copy_item", { id: cbEvent.id });
 
 		setTimeout(() => {
 			isCopied = false;
@@ -37,9 +37,9 @@
 	aria-selected={active}
 	onclick={clickHandler}>
 	<div class="content">
-		<span class="time">{new Date(timestamp).toLocaleString()}</span>
+		<span class="time">#{cbEvent.id}: {new Date(cbEvent.timestamp).toLocaleString()}</span>
 		<p data-selectable="true">
-			{content}
+			{cbEvent.content}
 		</p>
 	</div>
 	<button onclick={handleCopy}>

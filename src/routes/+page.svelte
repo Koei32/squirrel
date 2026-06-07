@@ -20,9 +20,8 @@
 	listen<cbEventNotice>("cb-text-copy", async (event) => {
 		const text = await readText();
 		cbLog.unshift({
-			event_type: event.payload.event_type,
+			...event.payload,
 			content: text,
-			timestamp: event.payload.timestamp,
 		});
 	});
 
@@ -142,9 +141,7 @@
 		{#each cbLog as event, index}
 			<Entry
 				bind:this={entries[index]}
-				content={event.content}
-				type={event.event_type}
-				timestamp={event.timestamp}
+				cbEvent={event}
 				clickHandler={() => {
 					activeIndex = index;
 				}} />

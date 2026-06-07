@@ -27,19 +27,28 @@ impl Database {
 
     /// Inserts clipboard event content into the database, returning the event
     /// on success or an error on failure to insert
-    pub async fn create_entry(&self, event: ClipboardEvent) -> Result<()> {
-        sqlx::query(
+    pub async fn create_entry(&self, event: ClipboardEvent) -> Result<ClipboardEvent> {
+        let entry: ClipboardEvent = sqlx::query_as(
             "
-            INSERT INTO clipboard (type, content) 
-            VALUES (?, ?);
+            INSERT INTO clipboard (event_type, content, timestamp) 
+            VALUES (?, ?, ?) RETURNING *;
             ",
         )
         .bind(String::from(event.event_type))
         .bind(event.content)
-        .execute(&self.pool)
-        .await
-        .expect("failed insertion");
-        Ok(())
+        .bind(event.timestamp)
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(entry)
+    }
+
+    /// Gets a clipboard entry by its id
+    pub async fn get_entry(&self, id: u16) -> Result<ClipboardEvent> {
+        let entry: ClipboardEvent = sqlx::query_as("SELECT * FROM clipboard WHERE id = ?;")
+            .bind(id)
+            .fetch_one(&self.pool)
+            .await?;
+        Ok(entry)
     }
 
     /// Gets all clipboard entries

@@ -37,6 +37,7 @@ impl From<CbEventType> for String {
 
 #[derive(Clone, Debug, Serialize, FromRow)]
 pub struct ClipboardEvent {
+    pub id: u16,
     pub event_type: CbEventType,
     pub content: String,
     pub timestamp: String,
@@ -46,6 +47,7 @@ pub struct ClipboardEvent {
 /// Only contains the event type and not the content.
 #[derive(Clone, Serialize)]
 pub struct ClipboardEventNotice {
+    pub id: u16,
     pub event_type: CbEventType,
     pub timestamp: String,
 }
@@ -53,6 +55,7 @@ pub struct ClipboardEventNotice {
 impl From<ClipboardEvent> for ClipboardEventNotice {
     fn from(value: ClipboardEvent) -> Self {
         ClipboardEventNotice {
+            id: value.id,
             event_type: value.event_type,
             timestamp: value.timestamp,
         }
@@ -90,6 +93,7 @@ impl ClipboardListener {
 
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) {
+        // just horrible
         if self.app.state::<AppState>().skip_event.load(SeqCst) {
             self.app.state::<AppState>().skip_event.store(false, SeqCst);
             return;
@@ -106,6 +110,7 @@ impl ClipboardHandler for ClipboardListener {
             }
 
             let event = ClipboardEvent {
+                id: u16::default(),
                 event_type: CbEventType::Text,
                 content,
                 timestamp: Local::now().to_rfc3339(),
@@ -135,12 +140,12 @@ pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
 async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>) -> Result<()> {
     let state = app.state::<AppState>();
     while let Some(event) = rx.recv().await {
-        let _ = app.emit("cb-text-copy", ClipboardEventNotice::from(event.clone()));
-        state
+        let event = state
             .db
             .create_entry(event)
             .await
             .expect("failed creating entry");
+        let _ = app.emit("cb-text-copy", ClipboardEventNotice::from(event.clone()));
     }
     Ok(())
 }
@@ -149,17 +154,24 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>
 // have to map_err everywhere like an amateur
 
 #[tauri::command]
-pub fn copy_item(app: tauri::AppHandle, content: String) -> std::result::Result<(), String> {
+pub fn copy_item(app: tauri::AppHandle, id: String) -> std::result::Result<(), String> {
     app.state::<AppState>().skip_event.store(true, SeqCst);
     let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
-    cb.set_text(content).map_err(|e| e.to_string())?;
+    cb.set_text(id).map_err(|e| e.to_string())?;
     Ok(())
 }
 
-#[tauri::command]
-pub fn paste_item(app: tauri::AppHandle, content: String) -> std::result::Result<(), String> {
+#[tauri::command(async)]
+pub async fn paste_item(app: tauri::AppHandle, id: u16) -> std::result::Result<(), String> {
     println!("paste_content called");
-    app.state::<AppState>().skip_event.store(true, SeqCst);
+    let state = app.state::<AppState>();
+    state.skip_event.store(true, SeqCst);
+    let content = state
+        .db
+        .get_entry(id)
+        .await
+        .map_err(|e| e.to_string())?
+        .content;
     let mut keyboard = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
     let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
     cb.set_text(content).map_err(|e| e.to_string())?;
