@@ -9,21 +9,16 @@ use db::Database;
 use std::sync::atomic::AtomicBool;
 use tauri::{Builder, Manager};
 
-#[derive(Debug)]
-pub struct AppState {
-    pub db: Database,
-    pub skip_event: AtomicBool,
-}
-
 async fn run_tauri_app() -> Result<()> {
-    let state = AppState {
-        db: Database::new().await?,
-        skip_event: AtomicBool::new(false),
-    };
+    let db = Database::new().await?;
+
+    // Whether or not to ignore clipboard events
+    let skip_event = AtomicBool::new(false);
 
     Builder::default()
         .setup(|app| {
-            app.manage(state);
+            app.manage(db);
+            app.manage(skip_event);
             clipboard::start_clipboard_listener(app.handle().clone())?;
             Ok(())
         })

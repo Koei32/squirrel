@@ -1,6 +1,6 @@
 //! clipboard stuff
 
-use crate::AppState;
+use crate::db::Database;
 use anyhow::Result;
 use chrono::Local;
 use clipboard_rs::{
@@ -11,9 +11,9 @@ use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 use std::{
     hash::{DefaultHasher, Hash, Hasher},
-    sync::atomic::Ordering::SeqCst,
+    sync::atomic::{AtomicBool, Ordering::SeqCst},
 };
-use tauri::{AppHandle, Emitter, Manager};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 
 #[derive(Clone, Debug, Serialize, Deserialize, sqlx::Type, Copy)]
@@ -21,8 +21,8 @@ use tokio::sync::mpsc::{self, UnboundedReceiver};
 #[serde(rename_all = "camelCase")]
 pub enum CbEventType {
     Text,
-    Image,
-    File,
+    Image, // TODO
+    File,  // TODO
 }
 
 impl From<CbEventType> for String {
@@ -43,8 +43,7 @@ pub struct ClipboardEvent {
     pub timestamp: String,
 }
 
-/// The minimal payload that will be sent to the frontend.
-/// Only contains the event type and not the content.
+/// The minimal payload that will be sent to the frontend. Doesn't have content.
 #[derive(Clone, Serialize)]
 pub struct ClipboardEventNotice {
     pub id: u16,
@@ -93,18 +92,19 @@ impl ClipboardListener {
 
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) {
-        // just horrible
-        if self.app.state::<AppState>().skip_event.load(SeqCst) {
-            self.app.state::<AppState>().skip_event.store(false, SeqCst);
+        // Flip the skip switch to false and skip if we're supposed to
+        if self.app.state::<AtomicBool>().load(SeqCst) {
+            self.app.state::<AtomicBool>().store(false, SeqCst);
             return;
         }
 
         if let Ok(content) = self.ctx.get_text() {
+            // Reject whitespace only copy
             if content.trim() == "" {
                 return;
             }
 
-            // if the copied item was the same as the last item, do nothing
+            // Reject consecutive duplicate copies
             if self.calculate_hash(&content) == self.last_hash.unwrap_or_default() {
                 return;
             }
@@ -124,7 +124,7 @@ impl ClipboardHandler for ClipboardListener {
 pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
     let (tx, rx) = mpsc::unbounded_channel::<ClipboardEvent>();
     let app_handle = app.clone();
-    // spawn listnener
+    // Spawn listnener
     std::thread::spawn(move || {
         let listener = ClipboardListener::new(tx, app);
         let mut watcher =
@@ -132,19 +132,15 @@ pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
         watcher.add_handler(listener).start_watch();
     });
 
-    // spawn the event emitter
+    // Spawn the event emitter
     tokio::spawn(start_emitter(app_handle, rx));
     Ok(())
 }
 
 async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>) -> Result<()> {
-    let state = app.state::<AppState>();
+    let db = app.state::<Database>();
     while let Some(event) = rx.recv().await {
-        let event = state
-            .db
-            .create_entry(event)
-            .await
-            .expect("failed creating entry");
+        let event = db.create_entry(event).await?;
         let _ = app.emit("cb-text-copy", ClipboardEventNotice::from(event.clone()));
     }
     Ok(())
@@ -153,28 +149,31 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>
 // TODO: make a custom error type to return from tauri commands so that i dont
 // have to map_err everywhere like an amateur
 
-#[tauri::command]
-pub fn copy_item(app: tauri::AppHandle, id: String) -> std::result::Result<(), String> {
-    app.state::<AppState>().skip_event.store(true, SeqCst);
+/// Copies the
+#[tauri::command(async)]
+pub async fn copy_item(
+    db: State<'_, Database>,
+    skip: State<'_, AtomicBool>,
+    id: u16,
+) -> std::result::Result<(), String> {
+    let content = db.get_entry(id).await.map_err(|e| e.to_string())?.content;
     let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
-    cb.set_text(id).map_err(|e| e.to_string())?;
+
+    // Skip the next copy event because it's caused by us
+    skip.store(true, SeqCst);
+    cb.set_text(content).map_err(|e| e.to_string())?;
+
     Ok(())
 }
 
 #[tauri::command(async)]
-pub async fn paste_item(app: tauri::AppHandle, id: u16) -> std::result::Result<(), String> {
-    println!("paste_content called");
-    let state = app.state::<AppState>();
-    state.skip_event.store(true, SeqCst);
-    let content = state
-        .db
-        .get_entry(id)
-        .await
-        .map_err(|e| e.to_string())?
-        .content;
+pub async fn paste_item(
+    db: State<'_, Database>,
+    skip: State<'_, AtomicBool>,
+    id: u16,
+) -> std::result::Result<(), String> {
+    copy_item(db, skip, id).await?;
     let mut keyboard = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
-    let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
-    cb.set_text(content).map_err(|e| e.to_string())?;
 
     //  we'll think about mac some other day
     // #[cfg(target_os = "macos")]
@@ -198,11 +197,7 @@ pub async fn paste_item(app: tauri::AppHandle, id: u16) -> std::result::Result<(
 }
 
 #[tauri::command(async)]
-pub async fn clear_history(app: tauri::AppHandle) -> std::result::Result<(), String> {
-    app.state::<AppState>()
-        .db
-        .clear_entries()
-        .await
-        .map_err(|e| e.to_string())?;
+pub async fn clear_history(db: State<'_, Database>) -> std::result::Result<(), String> {
+    db.clear_entries().await.map_err(|e| e.to_string())?;
     Ok(())
 }
