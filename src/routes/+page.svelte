@@ -9,6 +9,7 @@
 	import { TrayIcon, type TrayIconOptions } from "@tauri-apps/api/tray";
 	import { Menu } from "@tauri-apps/api/menu";
 	import { register } from "@tauri-apps/plugin-global-shortcut";
+	import { exit } from "@tauri-apps/plugin-process";
 
 	const window = getCurrentWindow();
 
@@ -93,6 +94,13 @@
 						action: async () => {
 							window.setFocus();
 							await window.show();
+						},
+					},
+					{
+						id: "quit",
+						text: "Quit",
+						action: async () => {
+							exit(0);
 						},
 					},
 				],
