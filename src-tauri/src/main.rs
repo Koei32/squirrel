@@ -30,6 +30,7 @@ async fn run_tauri_app() -> Result<()> {
         .invoke_handler(tauri::generate_handler![
             clipboard::copy_item,
             clipboard::paste_item,
+            clipboard::remove_entry,
             clipboard::clear_history,
         ])
         .run(tauri::generate_context!())?;

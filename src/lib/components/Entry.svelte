@@ -16,6 +16,10 @@
 		invoke("paste_item", { id: cbEvent.id });
 	}
 
+	export function handleRemove() {
+		invoke("remove_entry", { id: cbEvent.id });
+	}
+
 	// export function handleCopy() {
 	// 	isCopied = true;
 	// 	invoke("copy_item", { id: cbEvent.id });

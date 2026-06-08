@@ -61,6 +61,11 @@
 				}, 50);
 				break;
 			}
+			case "Delete": {
+				entries[activeIndex].handleRemove();
+				cbLog = cbLog.filter((value, index) => {index != activeIndex});
+				break;
+			}
 		}
 	}
 

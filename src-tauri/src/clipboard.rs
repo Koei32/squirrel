@@ -197,6 +197,12 @@ pub async fn paste_item(
 }
 
 #[tauri::command(async)]
+pub async fn remove_entry(db: State<'_, Database>, id: u16) -> std::result::Result<(), String> {
+    db.remove_entry(id).await.map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command(async)]
 pub async fn clear_history(db: State<'_, Database>) -> std::result::Result<(), String> {
     db.clear_entries().await.map_err(|e| e.to_string())?;
     Ok(())

@@ -51,6 +51,11 @@ impl Database {
         Ok(entry)
     }
 
+    pub async fn remove_entry(&self, id:u16) -> Result<()> {
+        sqlx::query("DELETE from clipboard WHERE id=?;").bind(id).execute(&self.pool).await?;
+        Ok(())
+    }
+
     /// Gets all clipboard entries
     pub async fn get_entries(&self) -> Result<Vec<ClipboardEvent>> {
         let results: Vec<ClipboardEvent> = sqlx::query_as("SELECT * FROM clipboard;")
