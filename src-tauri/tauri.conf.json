@@ -14,11 +14,13 @@
 			{
 				"title": "Squirrel",
 				"width": 300,
+				"minWidth": 200,
 				"height": 400,
+				"minHeight": 300,
 				"center": true,
 				"decorations": false,
 				"shadow": false,
-				"resizable": false,
+				"resizable": true,
 				"fullscreen": false,
 				"devtools": false,
 				"scrollBarStyle": "default"
