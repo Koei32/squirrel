@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import Titlebar from "$lib/components/Titlebar.svelte";
 	import "../app.css";
 	let { children } = $props();
 
@@ -20,4 +21,5 @@
 	});
 </script>
 
+<Titlebar />
 {@render children()}

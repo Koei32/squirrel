@@ -3,7 +3,7 @@
 
 	const { cbEvent, active = false, clickHandler } = $props();
 
-	let isCopied = $state(false);
+	// let isCopied = $state(false);
 	let element: HTMLElement | null = $state(null);
 
 	export function focusElement() {
@@ -16,14 +16,14 @@
 		invoke("paste_item", { id: cbEvent.id });
 	}
 
-	export function handleCopy() {
-		isCopied = true;
-		invoke("copy_item", { id: cbEvent.id });
+	// export function handleCopy() {
+	// 	isCopied = true;
+	// 	invoke("copy_item", { id: cbEvent.id });
 
-		setTimeout(() => {
-			isCopied = false;
-		}, 2000);
-	}
+	// 	setTimeout(() => {
+	// 		isCopied = false;
+	// 	}, 2000);
+	// }
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -42,13 +42,13 @@
 			{cbEvent.content}
 		</p>
 	</div>
-	<button onclick={handleCopy}>
+	<!-- <button onclick={handleCopy}>
 		{#if isCopied}
 			✓
 		{:else}
 			Copy
 		{/if}
-	</button>
+	</button> -->
 </div>
 
 <style>
@@ -75,7 +75,7 @@
 
 	.content {
 		display: flex;
-		width: 80%;
+		/* width: 80%; */
 		flex-direction: column;
 	}
 
@@ -96,7 +96,7 @@
 		white-space: pre-wrap;
 	}
 
-	button {
+	/* button {
 		all: unset;
 		padding: 0.5rem;
 		height: 1rem;
@@ -116,5 +116,5 @@
 
 	button:active {
 		background-color: #eee;
-	}
+	} */
 </style>

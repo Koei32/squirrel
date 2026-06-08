@@ -13,12 +13,14 @@
 		"windows": [
 			{
 				"title": "Squirrel",
-				"width": 600,
+				"width": 300,
 				"height": 400,
+				"center": true,
+				"decorations": false,
 				"resizable": false,
 				"fullscreen": false,
 				"devtools": false,
-				"scrollBarStyle": "fluentOverlay"
+				"scrollBarStyle": "default"
 			}
 		],
 		"security": {

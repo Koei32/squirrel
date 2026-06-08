@@ -130,14 +130,16 @@
 <svelte:window on:keydown={handleNavigation} />
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <main class="container" data-selectable="true">
-	<div>
+	<div class="head">
 		<p>Squirrel</p>
 	</div>
-	<div>
-		<div class="subhead">
-			<p><small>Clipboard history:</small></p>
-			<button onclick={clearHistory}>Clear History (permanent!)</button>
-		</div>
+	<div class="subhead">
+		<span><small>Clipboard history:</small></span>
+		<button onclick={clearHistory} aria-label="Clear History"
+			><img src="shredder.svg" alt="shredder" />
+		</button>
+	</div>
+	<div class="feed">
 		{#each cbLog as event, index}
 			<Entry
 				bind:this={entries[index]}
@@ -160,14 +162,27 @@
 
 	.container {
 		margin: 0;
+		/* margin-top: 1rem; */
+		/* top: 4rem; */
 		display: flex;
 		flex-direction: column;
 		padding: 0rem 1rem;
 	}
 
-	p {
+	.head {
+		width: 100%;
+		height: 1rem;
+		margin: 0;
+		margin-bottom: 1rem;
 		color: #555;
+		text-align: center;
+		font-size: 0.75rem;
 	}
+
+	/* .head > p {
+		margin: 0;
+		margin-top: 0.25rem;
+	} */
 
 	div {
 		display: flex;
@@ -180,20 +195,31 @@
 		align-items: center;
 	}
 
+	.feed {
+		height: 400px;
+		overflow-y: auto;
+	}
+
 	button {
 		all: unset;
-		font-size: 0.75rem;
+		/* font-size: 0.75rem; */
 		padding: 0.5rem;
 		height: 1rem;
+		width: 1rem;
 		cursor: pointer;
 		background-color: rgb(255, 164, 164);
 		color: maroon;
 		font-weight: bold;
-		min-width: 2rem;
 		text-align: center;
 		border-radius: 100px;
 		transition: all 200ms;
 		outline: none;
+	}
+
+	button > img {
+		/* fill: red; */
+		height: 1rem;
+		/* width: 0.5rem; */
 	}
 
 	button:hover {
