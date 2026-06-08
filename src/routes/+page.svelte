@@ -130,14 +130,14 @@
 <svelte:window on:keydown={handleNavigation} />
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <main class="container" data-selectable="true">
-	<div class="head">
+	<!-- <div class="head">
 		<p>Squirrel</p>
-	</div>
+	</div> -->
 	<div class="subhead">
 		<span><small>Clipboard history:</small></span>
-		<button onclick={clearHistory} aria-label="Clear History"
+		<!-- <button onclick={clearHistory} aria-label="Clear History"
 			><img src="shredder.svg" alt="shredder" />
-		</button>
+		</button> -->
 	</div>
 	<div class="feed">
 		{#each cbLog as event, index}
@@ -161,32 +161,13 @@
 	}
 
 	.container {
+		height: 100vh;
 		margin: 0;
-		/* margin-top: 1rem; */
+		margin-top: 2rem;
 		/* top: 4rem; */
 		display: flex;
 		flex-direction: column;
 		padding: 0rem 1rem;
-	}
-
-	.head {
-		width: 100%;
-		height: 1rem;
-		margin: 0;
-		margin-bottom: 1rem;
-		color: #555;
-		text-align: center;
-		font-size: 0.75rem;
-	}
-
-	/* .head > p {
-		margin: 0;
-		margin-top: 0.25rem;
-	} */
-
-	div {
-		display: flex;
-		flex-direction: column;
 	}
 
 	.subhead {
@@ -196,8 +177,9 @@
 	}
 
 	.feed {
-		height: 400px;
+		flex-grow: 1;
 		overflow-y: auto;
+		padding: 1px;
 	}
 
 	button {

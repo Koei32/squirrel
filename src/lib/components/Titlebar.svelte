@@ -9,9 +9,9 @@
 
 <div class="titlebar">
 	<div data-tauri-drag-region class="drag-region"></div>
-	<!-- <div class="head">
-		<p>Squirrel</p>
-	</div> -->
+	<div class="head" data-tauri-drag-region>
+		<p data-tauri-drag-region>Squirrel</p>
+	</div>
 	<!-- https://api.iconify.design/mdi:window-minimize.svg -->
 	<!-- <button id="titlebar-minimize" title="minimize">
 			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -30,7 +30,7 @@
 </div>
 
 <style>
-	/* .head {
+	.head {
 		height: 1rem;
 		width: 100%;
 		margin: 0;
@@ -38,16 +38,19 @@
 		text-align: center;
 		font-size: 0.75rem;
 		align-self: center;
+		justify-self: center;
 	}
 
 	.head > p {
-		margin-top: 0.25rem;
-	} */
+		margin: 0;
+	}
 
 	.drag-region {
 		flex-grow: 1;
 	}
 	.titlebar {
+		background-color: #ddd;
+		border: 1px solid #ccc;
 		height: 1.5rem;
 		width: 100%;
 		display: flex;

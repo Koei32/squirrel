@@ -17,6 +17,7 @@
 				"height": 400,
 				"center": true,
 				"decorations": false,
+				"shadow": false,
 				"resizable": false,
 				"fullscreen": false,
 				"devtools": false,
