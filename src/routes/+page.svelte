@@ -63,7 +63,7 @@
 			}
 			case "Delete": {
 				entries[activeIndex].handleRemove();
-				cbLog = cbLog.filter((value, index) => {index != activeIndex});
+				cbLog.splice(activeIndex, 1);
 				break;
 			}
 		}
@@ -182,7 +182,8 @@
 	}
 
 	.feed {
-		flex-grow: 1;
+		/* flex-grow: 1; */
+		height: 80vh;
 		overflow-y: auto;
 		padding: 1px;
 	}
