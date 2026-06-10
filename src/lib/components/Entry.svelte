@@ -41,11 +41,11 @@
 	aria-selected={active}
 	onclick={clickHandler}>
 	<div class="content">
-		<span class="time">#{cbEvent.id}: {new Date(cbEvent.timestamp).toLocaleString()}</span>
 		<p data-selectable="true">
 			{cbEvent.content}
 		</p>
 	</div>
+	<span class="time">{new Date(cbEvent.timestamp).toLocaleString()}</span>
 	<!-- <button onclick={handleCopy}>
 		{#if isCopied}
 			✓
@@ -63,10 +63,11 @@
 		background-color: #eee;
 		border: 1px solid #bbb;
 		border-radius: 3px;
-		padding: 0.75rem;
+		padding: 0.5rem;
 		display: flex;
+		flex-direction: column;
 		justify-content: space-between;
-		align-items: center;
+		/* align-items: center; */
 		margin-bottom: 0.1rem;
 	}
 
@@ -80,14 +81,13 @@
 	}
 
 	.content {
-		display: flex;
 		min-width: 0;
 		width: 100%;
 		flex-grow: 1;
-		flex-direction: column;
 	}
 
 	.time {
+		margin-top: 0.5rem;
 		font-family: monospace;
 		font-size: 0.6rem;
 		color: #bbb;
@@ -102,6 +102,10 @@
 		overflow-y: auto;
 		overflow-wrap: break-word;
 		white-space: pre-wrap;
+	}
+
+	::-webkit-scrollbar {
+		width: 3px;
 	}
 
 	::-webkit-scrollbar-thumb {

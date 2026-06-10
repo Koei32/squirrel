@@ -11,21 +11,21 @@ body {
 }
 
 ::-webkit-scrollbar {
-	width: 3px;
+	width: 0.65rem;
 }
 
-/* Track */
-/* ::-webkit-scrollbar-track {
-	background: #f1f1f1;
-} */
+::-webkit-scrollbar-track {
+	background: transparent;
+}
 
-/* Handle */
 ::-webkit-scrollbar-thumb {
+	cursor: pointer;
 	border-radius: 50px;
+	border: 4px solid transparent;
+	background-clip: padding-box;
 	background: #888;
 }
 
-/* Handle on hover */
 ::-webkit-scrollbar-thumb:hover {
 	background: #555;
 }

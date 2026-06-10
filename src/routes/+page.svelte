@@ -174,7 +174,7 @@
 		margin-top: 2rem;
 		display: flex;
 		flex-direction: column;
-		padding: 0rem 1rem;
+		padding: 0rem 0rem 0rem 0.65rem;
 	}
 
 	.subhead {
@@ -184,9 +184,11 @@
 	}
 
 	.feed {
+		scrollbar-gutter: stable;
 		scroll-behavior: smooth;
 		display: flex;
 		flex-direction: column;
+		justify-content: start;
 		height: 80vh; /* ehh */
 		overflow-y: auto;
 		padding: 1px;
@@ -222,6 +224,8 @@
 
 	.no-history-text {
 		text-align: center;
+		/* align-self: center; */
+		justify-self: center;
 		font-size: 0.75rem;
 		color: #ccc;
 	}

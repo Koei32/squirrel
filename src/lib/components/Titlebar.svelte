@@ -7,19 +7,11 @@
 	}
 </script>
 
-<div class="titlebar">
-	<div data-tauri-drag-region class="drag-region"></div>
-	<div class="head" data-tauri-drag-region>
+<div class="titlebar" data-tauri-drag-region>
+	<div class="head">
 		<p data-tauri-drag-region>Squirrel</p>
 	</div>
-	<!-- https://api.iconify.design/mdi:window-minimize.svg -->
-	<!-- <button id="titlebar-minimize" title="minimize">
-			<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-				<path fill="currentColor" d="M19 13H5v-2h14z" />
-			</svg>
-		</button> -->
 
-	<!-- https://api.iconify.design/mdi:close.svg -->
 	<button id="titlebar-close" title="close" onclick={handleClose}>
 		<svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 24 24">
 			<path
@@ -45,10 +37,8 @@
 		margin: 0;
 	}
 
-	.drag-region {
-		flex-grow: 1;
-	}
 	.titlebar {
+		cursor: move;
 		background-color: #ddd;
 		border: 1px solid #ccc;
 		height: 1.5rem;
