@@ -193,7 +193,7 @@
 		margin-top: 2rem;
 		display: flex;
 		flex-direction: column;
-		padding: 0rem 0rem 0rem 0.65rem;
+		padding: 0rem 0.35rem 0rem 0.65rem;
 	}
 
 	.subhead {

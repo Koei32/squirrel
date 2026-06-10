@@ -134,7 +134,7 @@
 	.time {
 		font-family: monospace;
 		font-size: 0.6rem;
-		color: #bbb;
+		color: #aaa;
 	}
 
 	p {
@@ -183,7 +183,7 @@
 	svg {
 		height: 0.75rem;
 		/* fill: #bbb; */
-		color: #bbb;
+		color: #aaa;
 	}
 
 	/* button:hover {
