@@ -2,7 +2,7 @@
 	import { invoke } from "@tauri-apps/api/core";
 	const { cbEvent, active = false, onClick, onPin, onDelete } = $props();
 
-	// let isCopied = $state(false);
+	let isCopied = $state(false);
 	let element: HTMLElement | null = $state(null);
 
 	export function focusElement() {
@@ -20,8 +20,13 @@
 		await onDelete(cbEvent.id);
 	}
 
-	export function handleCopy() {
+	export async function handleCopy() {
+		isCopied = true;
 		invoke("copy_item", { id: cbEvent.id });
+
+		setTimeout(() => {
+			isCopied = false;
+		}, 2000);
 	}
 </script>
 
@@ -43,19 +48,37 @@
 		<span class="time">{new Date(cbEvent.timestamp).toLocaleString()}</span>
 		<div class="buttons">
 			<button onclick={handleCopy} title="Copy">
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="2"
-					stroke-linecap="round"
-					stroke-linejoin="round">
-					<rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path
-						d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-				</svg>
+				{#if isCopied}
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						color="green"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="check-icon"
+						><path d="M20 6 9 17l-5-5" />
+					</svg>
+				{:else}
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="24"
+						height="24"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="copy-icon">
+						<rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path
+							d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+					</svg>
+				{/if}
 			</button>
 			<button onclick={onPin} title="Pin">
 				<svg
@@ -67,7 +90,8 @@
 					stroke="currentColor"
 					stroke-width="2"
 					stroke-linecap="round"
-					stroke-linejoin="round">
+					stroke-linejoin="round"
+					class="pin-icon">
 					<path d="M12 17v5" /><path
 						d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
 				</svg>
@@ -82,7 +106,8 @@
 					stroke="currentColor"
 					stroke-width="2"
 					stroke-linecap="round"
-					stroke-linejoin="round">
+					stroke-linejoin="round"
+					class="cross-icon">
 					<path d="M18 6 6 18" /><path d="m6 6 12 12" />
 				</svg>
 			</button>
@@ -192,12 +217,20 @@
 		background-color: #999;
 	} */
 
-	button:hover > svg {
-		transition: all 200ms;
+	button:active {
+		background-color: #eee;
+	}
+
+	svg:hover {
 		color: black;
 	}
 
-	button:active {
-		background-color: #eee;
+	.cross-icon:hover {
+		color: red;
+	}
+
+	.check-icon,
+	.check-icon:hover {
+		color: green;
 	}
 </style>
