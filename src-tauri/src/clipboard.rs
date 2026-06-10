@@ -12,6 +12,7 @@ use sqlx::prelude::FromRow;
 use std::{
     hash::{DefaultHasher, Hash, Hasher},
     sync::atomic::{AtomicBool, Ordering::SeqCst},
+    time::Duration,
 };
 use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
@@ -187,14 +188,16 @@ pub async fn paste_item(
     keyboard
         .key(modifier, Direction::Press)
         .map_err(|e| e.to_string())?;
+    tokio::time::sleep(Duration::from_millis(5)).await;
     keyboard
         .key(Key::Unicode('v'), Direction::Press)
         .map_err(|e| e.to_string())?;
-    keyboard
-        .key(Key::Unicode('v'), Direction::Release)
-        .map_err(|e| e.to_string())?;
+    tokio::time::sleep(Duration::from_millis(5)).await;
     keyboard
         .key(modifier, Direction::Release)
+        .map_err(|e| e.to_string())?;
+    keyboard
+        .key(Key::Unicode('v'), Direction::Release)
         .map_err(|e| e.to_string())?;
     Ok(())
 }

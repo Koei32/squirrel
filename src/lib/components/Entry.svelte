@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/core";
-	const { cbEvent, active = false, clickHandler, onCopy, onPin, onDelete } = $props();
+	const { cbEvent, active = false, onClick, onPin, onDelete } = $props();
 
 	// let isCopied = $state(false);
 	let element: HTMLElement | null = $state(null);
@@ -17,7 +17,7 @@
 
 	export async function handleRemove() {
 		invoke("remove_entry", { id: cbEvent.id });
-		await onDelete();
+		await onDelete(cbEvent.id);
 	}
 
 	export function handleCopy() {
@@ -25,16 +25,16 @@
 	}
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
 	class="entry-container list-item"
 	bind:this={element}
 	class:active
 	tabindex="-1"
 	role="option"
-	aria-selected={active}
-	onclick={clickHandler}>
-	<div class="content">
+	aria-selected={active}>
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="content" onclick={onClick}>
 		<p data-selectable="true">
 			{cbEvent.content}
 		</p>
@@ -42,7 +42,7 @@
 	<div class="footer">
 		<span class="time">{new Date(cbEvent.timestamp).toLocaleString()}</span>
 		<div class="buttons">
-			<button onclick={onCopy} title="Copy">
+			<button onclick={handleCopy} title="Copy">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"

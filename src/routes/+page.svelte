@@ -34,16 +34,12 @@
 		entries = [];
 	}
 
-	function copyEntry() {
-		entries[activeIndex].handleCopy;
-	}
-
 	function pinEntry() {
 		// todo
 	}
 
-	async function deleteEntry() {
-		cbLog.splice(activeIndex, 1);
+	async function deleteEntry(id: number) {
+		cbLog = cbLog.filter((event) => event.id != id);
 		activeIndex = Math.max(0, (activeIndex -= 1));
 
 		// without this, something goes wonky and `entries` has a null
@@ -72,8 +68,12 @@
 				focusEntry();
 				break;
 			}
-			case "C": {
-				copyEntry();
+			case "c": {
+				entries[activeIndex].handleCopy();
+				break;
+			}
+			case "p": {
+				pinEntry();
 				break;
 			}
 			case "Enter": {
@@ -166,11 +166,10 @@
 			<Entry
 				bind:this={entries[index]}
 				cbEvent={event}
-				clickHandler={() => {
+				onClick={() => {
 					activeIndex = index;
 				}}
 				onDelete={deleteEntry}
-				onCopy={copyEntry}
 				onPin={pinEntry} />
 		{:else}
 			<span class="no-history-text">no history yet</span>
