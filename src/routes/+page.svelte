@@ -60,16 +60,17 @@
 			return;
 		}
 		if (entries.length === 0) return;
-
 		switch (event.key) {
 			case "ArrowDown": {
 				event.preventDefault();
 				activeIndex = (activeIndex + 1) % cbLog.length;
+				focusEntry();
 				break;
 			}
 			case "ArrowUp": {
 				event.preventDefault();
 				activeIndex = (activeIndex - 1 + cbLog.length) % cbLog.length;
+				focusEntry();
 				break;
 			}
 			case "C": {
