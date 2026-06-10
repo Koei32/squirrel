@@ -149,23 +149,26 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<ClipboardEvent>
 // TODO: make a custom error type to return from tauri commands so that i dont
 // have to map_err everywhere like an amateur
 
-/// Copies the
+/// Copies the item associated with the given id to the clipboard.
 #[tauri::command(async)]
 pub async fn copy_item(
     db: State<'_, Database>,
     skip: State<'_, AtomicBool>,
     id: u16,
 ) -> std::result::Result<(), String> {
-    let content = db.get_entry(id).await.map_err(|e| e.to_string())?.content;
+    let content = db.get_entry(id);
     let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
 
     // Skip the next copy event because it's caused by us
     skip.store(true, SeqCst);
-    cb.set_text(content).map_err(|e| e.to_string())?;
+    cb.set_text(content.await.map_err(|e| e.to_string())?.content)
+        .map_err(|e| e.to_string())?;
 
     Ok(())
 }
 
+/// Pastes the item associated with the given id via Ctrl+V shortcut emulation
+/// using Enigo.
 #[tauri::command(async)]
 pub async fn paste_item(
     db: State<'_, Database>,
@@ -196,12 +199,14 @@ pub async fn paste_item(
     Ok(())
 }
 
+/// Removes the entry associated with the given id.
 #[tauri::command(async)]
 pub async fn remove_entry(db: State<'_, Database>, id: u16) -> std::result::Result<(), String> {
     db.remove_entry(id).await.map_err(|e| e.to_string())?;
     Ok(())
 }
 
+/// Clears the entire clipboard history, permanently.
 #[tauri::command(async)]
 pub async fn clear_history(db: State<'_, Database>) -> std::result::Result<(), String> {
     db.clear_entries().await.map_err(|e| e.to_string())?;
