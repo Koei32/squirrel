@@ -23,6 +23,7 @@
 			...event.payload,
 			content: text,
 		});
+		focusEntry();
 	});
 
 	async function clearHistory() {
@@ -33,7 +34,26 @@
 		entries = [];
 	}
 
-	async function handleNavigation(event: KeyboardEvent) {
+	function copyEntry() {
+		entries[activeIndex].handleCopy;
+	}
+
+	function pinEntry() {
+		// todo
+	}
+
+	async function deleteEntry() {
+		entries[activeIndex].handleRemove();
+		cbLog.splice(activeIndex, 1);
+		activeIndex = Math.max(0, (activeIndex -= 1));
+
+		// without this, something goes wonky and `entries` has a null
+		// element when the last entry is deleted. a bit confused.
+		await tick();
+		entries.length = cbLog.length;
+	}
+
+	async function handleKbInput(event: KeyboardEvent) {
 		if (event.key == "Escape") {
 			event.preventDefault();
 			window.hide();
@@ -52,6 +72,10 @@
 				activeIndex = (activeIndex - 1 + cbLog.length) % cbLog.length;
 				break;
 			}
+			case "C": {
+				copyEntry();
+				break;
+			}
 			case "Enter": {
 				window.hide();
 				setTimeout(() => {
@@ -60,18 +84,10 @@
 				break;
 			}
 			case "Delete": {
-				entries[activeIndex].handleRemove();
-				cbLog.splice(activeIndex, 1);
-				activeIndex = Math.max(0, (activeIndex -= 1));
-
-				// without this, something goes wonky and `entries` has a null
-				// element when the last entry is deleted. a bit confused.
-				await tick();
-				entries.length = cbLog.length;
+				deleteEntry();
 				break;
 			}
 		}
-		focusEntry();
 	}
 
 	function focusEntry() {
@@ -139,7 +155,7 @@
 	});
 </script>
 
-<svelte:window on:keydown={handleNavigation} />
+<svelte:window on:keydown={handleKbInput} />
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <main class="container" data-selectable="true">
 	<div class="subhead">
@@ -152,7 +168,10 @@
 				cbEvent={event}
 				clickHandler={() => {
 					activeIndex = index;
-				}} />
+				}}
+				onDelete={deleteEntry}
+				onCopy={copyEntry}
+				onPin={pinEntry} />
 		{:else}
 			<span class="no-history-text">no history yet</span>
 		{/each}
@@ -194,40 +213,12 @@
 		padding: 1px;
 	}
 
-	button {
-		all: unset;
-		padding: 0.5rem;
-		height: 1rem;
-		width: 1rem;
-		cursor: pointer;
-		background-color: rgb(255, 164, 164);
-		color: maroon;
-		font-weight: bold;
-		text-align: center;
-		border-radius: 100px;
-		transition: all 200ms;
-		outline: none;
-	}
-
-	button > img {
-		height: 1rem;
-	}
-
-	button:hover {
-		transition: all 200ms;
-		box-shadow: 0px 1px 3px rgb(192, 192, 192);
-	}
-
-	button:active {
-		background-color: #eee;
-	}
-
 	.no-history-text {
 		text-align: center;
 		/* align-self: center; */
 		justify-self: center;
 		font-size: 0.75rem;
-		color: #ccc;
+		color: #bbb;
 	}
 
 	/* @media (prefers-color-scheme: dark) {
