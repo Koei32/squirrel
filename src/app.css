@@ -1,4 +1,5 @@
 /* eslint-disable css/use-baseline */
+html,
 body {
 	overflow: hidden;
 	user-select: none;
@@ -7,10 +8,6 @@ body {
 	/* prevents the rubber bandy overscroll on trackpads */
 	overscroll-behavior: none;
 	margin: 0;
-}
-
-* {
-	scroll-behavior: smooth;
 }
 
 ::-webkit-scrollbar {

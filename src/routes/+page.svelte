@@ -172,7 +172,6 @@
 		height: 100vh;
 		margin: 0;
 		margin-top: 2rem;
-		/* top: 4rem; */
 		display: flex;
 		flex-direction: column;
 		padding: 0rem 1rem;
@@ -185,16 +184,16 @@
 	}
 
 	.feed {
+		scroll-behavior: smooth;
 		display: flex;
 		flex-direction: column;
-		height: 80vh;
+		height: 80vh; /* ehh */
 		overflow-y: auto;
 		padding: 1px;
 	}
 
 	button {
 		all: unset;
-		/* font-size: 0.75rem; */
 		padding: 0.5rem;
 		height: 1rem;
 		width: 1rem;
@@ -209,9 +208,7 @@
 	}
 
 	button > img {
-		/* fill: red; */
 		height: 1rem;
-		/* width: 0.5rem; */
 	}
 
 	button:hover {

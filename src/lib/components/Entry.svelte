@@ -57,6 +57,8 @@
 
 <style>
 	.entry-container {
+		min-width: 0;
+		max-width: 100%;
 		font-size: 0.8rem;
 		background-color: #eee;
 		border: 1px solid #bbb;
@@ -79,7 +81,9 @@
 
 	.content {
 		display: flex;
-		/* width: 80%; */
+		min-width: 0;
+		width: 100%;
+		flex-grow: 1;
 		flex-direction: column;
 	}
 
@@ -92,12 +96,21 @@
 	p {
 		margin-bottom: 0;
 		margin-top: 0.25rem;
-		max-height: 12rem;
+		max-height: 6rem;
+		max-width: 100%;
 		user-select: text;
 		overflow-y: auto;
-		overflow-x: auto;
 		overflow-wrap: break-word;
 		white-space: pre-wrap;
+	}
+
+	::-webkit-scrollbar-thumb {
+		border-radius: 50px;
+		background: #ccc;
+	}
+
+	::-webkit-scrollbar-thumb:hover {
+		background: #bbb;
 	}
 
 	/* button {
