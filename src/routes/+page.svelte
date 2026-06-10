@@ -18,10 +18,10 @@
 	let activeIndex = $state(0);
 
 	listen<cbEventNotice>("cb-text-copy", async (event) => {
-		const text = await readText();
+		const text = readText();
 		cbLog.unshift({
 			...event.payload,
-			content: text,
+			content: await text,
 		});
 		focusEntry();
 	});
@@ -43,7 +43,6 @@
 	}
 
 	async function deleteEntry() {
-		entries[activeIndex].handleRemove();
 		cbLog.splice(activeIndex, 1);
 		activeIndex = Math.max(0, (activeIndex -= 1));
 
@@ -85,7 +84,7 @@
 				break;
 			}
 			case "Delete": {
-				deleteEntry();
+				entries[activeIndex].handleRemove();
 				break;
 			}
 		}
