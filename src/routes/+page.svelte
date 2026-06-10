@@ -5,7 +5,7 @@
 	import { readText } from "@tauri-apps/plugin-clipboard-manager";
 	import { invoke } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
 	import { TrayIcon, type TrayIconOptions } from "@tauri-apps/api/tray";
 	import { Menu } from "@tauri-apps/api/menu";
 	import { register } from "@tauri-apps/plugin-global-shortcut";
@@ -33,7 +33,7 @@
 		entries = [];
 	}
 
-	function handleNavigation(event: KeyboardEvent) {
+	async function handleNavigation(event: KeyboardEvent) {
 		if (event.key == "Escape") {
 			event.preventDefault();
 			window.hide();
@@ -45,13 +45,11 @@
 			case "ArrowDown": {
 				event.preventDefault();
 				activeIndex = (activeIndex + 1) % cbLog.length;
-				focusEntry();
 				break;
 			}
 			case "ArrowUp": {
 				event.preventDefault();
 				activeIndex = (activeIndex - 1 + cbLog.length) % cbLog.length;
-				focusEntry();
 				break;
 			}
 			case "Enter": {
@@ -64,12 +62,20 @@
 			case "Delete": {
 				entries[activeIndex].handleRemove();
 				cbLog.splice(activeIndex, 1);
+				activeIndex = Math.max(0, (activeIndex -= 1));
+
+				// without this, something goes wonky and `entries` has a null
+				// element when the last entry is deleted. a bit confused.
+				await tick();
+				entries.length = cbLog.length;
 				break;
 			}
 		}
+		focusEntry();
 	}
 
 	function focusEntry() {
+		if (!entries) return;
 		const targetComponent = entries[activeIndex];
 		if (targetComponent) {
 			targetComponent.focusElement();
@@ -122,6 +128,7 @@
 		};
 
 		initSetup();
+		focusEntry();
 
 		// cleanup handler
 		return () => {
@@ -135,23 +142,19 @@
 <svelte:window on:keydown={handleNavigation} />
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <main class="container" data-selectable="true">
-	<!-- <div class="head">
-		<p>Squirrel</p>
-	</div> -->
 	<div class="subhead">
 		<span><small>Clipboard history:</small></span>
-		<!-- <button onclick={clearHistory} aria-label="Clear History"
-			><img src="shredder.svg" alt="shredder" />
-		</button> -->
 	</div>
 	<div class="feed">
-		{#each cbLog as event, index}
+		{#each cbLog as event, index (cbLog[index].id)}
 			<Entry
 				bind:this={entries[index]}
 				cbEvent={event}
 				clickHandler={() => {
 					activeIndex = index;
 				}} />
+		{:else}
+			<span class="no-history-text">no history yet</span>
 		{/each}
 	</div>
 </main>
@@ -182,7 +185,8 @@
 	}
 
 	.feed {
-		/* flex-grow: 1; */
+		display: flex;
+		flex-direction: column;
 		height: 80vh;
 		overflow-y: auto;
 		padding: 1px;
@@ -217,6 +221,12 @@
 
 	button:active {
 		background-color: #eee;
+	}
+
+	.no-history-text {
+		text-align: center;
+		font-size: 0.75rem;
+		color: #ccc;
 	}
 
 	/* @media (prefers-color-scheme: dark) {
