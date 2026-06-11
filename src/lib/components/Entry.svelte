@@ -2,6 +2,8 @@
 	import { invoke } from "@tauri-apps/api/core";
 	const { cbEvent, active = false, onClick, onPin, onDelete } = $props();
 
+	export const id = cbEvent.id;
+
 	let isCopied = $state(false);
 	let element: HTMLElement | null = $state(null);
 
@@ -26,7 +28,7 @@
 
 		setTimeout(() => {
 			isCopied = false;
-		}, 2000);
+		}, 1000);
 	}
 </script>
 

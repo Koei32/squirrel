@@ -14,8 +14,14 @@
 	const window = getCurrentWindow();
 
 	let cbLog: Array<clipboardEvent> = $state([]);
-	let entries: Array<Entry> = $state([]);
-	let activeIndex = $state(0);
+	let filteredCbLog: Array<clipboardEvent> = $derived(
+		cbLog.filter((event) =>
+			event.content.toLowerCase().includes(searchQuery.trim().toLowerCase()),
+		),
+	);
+	let displayedEntries: Array<Entry> = $state([]);
+	let activeIndex: number | undefined = $state(0);
+	let activeEntry: Entry | undefined = $derived(displayedEntries[activeIndex]);
 
 	listen<cbEventNotice>("cb-text-copy", async (event) => {
 		const text = readText();
@@ -23,7 +29,9 @@
 			...event.payload,
 			content: await text,
 		});
-		focusEntry();
+		// await tick();
+		// displayedEntries.length = cbLog.length;
+		activeEntry?.focusElement();
 	});
 
 	async function clearHistory() {
@@ -31,71 +39,102 @@
 			console.log(r);
 		});
 		cbLog = [];
-		entries = [];
+		displayedEntries = [];
 	}
 
 	function pinEntry() {
 		// todo
 	}
 
-	async function deleteEntry(id: number) {
-		cbLog = cbLog.filter((event) => event.id != id);
-		activeIndex = Math.max(0, (activeIndex -= 1));
-
-		// without this, something goes wonky and `entries` has a null
-		// element when the last entry is deleted. a bit confused.
-		await tick();
-		entries.length = cbLog.length;
+	function clamp(num: number, min: number, max: number) {
+		return Math.min(Math.max(num, min), max);
 	}
 
-	async function handleKbInput(event: KeyboardEvent) {
-		if (event.key == "Escape") {
-			event.preventDefault();
-			window.hide();
-			return;
+	async function deleteEntry(id: number) {
+		cbLog = cbLog.filter((event) => event.id != id);
+		if (activeIndex) {
+			activeIndex = clamp(activeIndex, 0, filteredCbLog.length - 1);
 		}
-		if (entries.length === 0) return;
+
+		// without this, something goes wonky and `displayedEntries` has a null
+		// element when the last entry is deleted. a bit confused.
+		// await tick();
+		// displayedEntries.length = cbLog.length;
+	}
+
+	$effect(() => {
+		displayedEntries.length = filteredCbLog.length;
+	});
+
+	async function handleKbInput(event: KeyboardEvent) {
+		// debug assert
+		// if (filteredCbLog.length != displayedEntries.length) {
+		// 	console.warn(
+		// 		`cblog: ${filteredCbLog.length} != ${displayedEntries.length} :dispentries`,
+		// 	);
+		// }
+
+		switch (event.key) {
+			case "Escape": {
+				event.preventDefault();
+				window.hide();
+				return;
+			}
+			case "/": {
+				if (document.activeElement != searchBar) {
+					event.preventDefault();
+					searchBar.focus();
+					break;
+				}
+			}
+		}
+
 		switch (event.key) {
 			case "ArrowDown": {
 				event.preventDefault();
-				activeIndex = (activeIndex + 1) % cbLog.length;
-				focusEntry();
+				activeIndex = clamp(activeIndex! + 1, 0, displayedEntries.length - 1);
+				activeEntry?.focusElement();
 				break;
 			}
 			case "ArrowUp": {
 				event.preventDefault();
-				activeIndex = (activeIndex - 1 + cbLog.length) % cbLog.length;
-				focusEntry();
+				activeIndex = clamp(activeIndex! - 1, 0, displayedEntries.length - 1);
+				activeEntry?.focusElement();
 				break;
 			}
 			case "c": {
-				entries[activeIndex].handleCopy();
+				if (document.activeElement == searchBar) return;
+				activeEntry?.handleCopy();
 				break;
 			}
 			case "p": {
+				if (document.activeElement == searchBar) return;
 				pinEntry();
 				break;
 			}
 			case "Enter": {
 				window.hide();
 				setTimeout(() => {
-					entries[activeIndex].handlePaste();
+					activeEntry?.handlePaste();
 				}, 50);
 				break;
 			}
 			case "Delete": {
-				entries[activeIndex].handleRemove();
+				if (document.activeElement == searchBar) return;
+				activeEntry?.handleRemove();
 				break;
+			}
+			default: {
+				searchBar.focus();
 			}
 		}
 	}
 
-	function focusEntry() {
-		if (!entries) return;
-		const targetComponent = entries[activeIndex];
-		if (targetComponent) {
-			targetComponent.focusElement();
-		}
+	let searchBar: HTMLInputElement;
+	let searchQuery = $state("");
+
+	async function searchHandler() {
+		console.log(displayedEntries.length);
 	}
 
 	onMount(() => {
@@ -144,7 +183,7 @@
 		};
 
 		initSetup();
-		focusEntry();
+		activeEntry?.focusElement();
 
 		// cleanup handler
 		return () => {
@@ -159,12 +198,18 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <main class="container" data-selectable="true">
 	<div class="subhead">
-		<span><small>Clipboard history:</small></span>
+		<input
+			class="search"
+			bind:value={searchQuery}
+			oninput={searchHandler}
+			bind:this={searchBar}
+			placeholder="press / to search" />
+		<p>Clipboard history:</p>
 	</div>
 	<div class="feed">
-		{#each cbLog as event, index (cbLog[index].id)}
+		{#each filteredCbLog as event, index (filteredCbLog[index].id)}
 			<Entry
-				bind:this={entries[index]}
+				bind:this={displayedEntries[index]}
 				cbEvent={event}
 				onClick={() => {
 					activeIndex = index;
@@ -172,7 +217,7 @@
 				onDelete={deleteEntry}
 				onPin={pinEntry} />
 		{:else}
-			<span class="no-history-text">no history yet</span>
+			<span class="no-history-text">no items</span>
 		{/each}
 	</div>
 </main>
@@ -196,9 +241,32 @@
 	}
 
 	.subhead {
-		flex-direction: row;
+		/* width: 100%; */
+		padding-right: 0.3rem;
+		flex-direction: column;
 		justify-content: space-between;
 		align-items: center;
+	}
+
+	input {
+		border-radius: 0.2rem;
+		border: 1px solid #aaa;
+		box-sizing: border-box;
+		height: 1.5rem;
+		width: 100%;
+		margin: 0;
+		padding: 0;
+		padding-left: 0.35rem;
+	}
+
+	input:focus {
+		border: 1px solid #333;
+		outline: none;
+	}
+
+	p {
+		margin: 0.5rem 0 0 0;
+		font-size: 0.8rem;
 	}
 
 	.feed {

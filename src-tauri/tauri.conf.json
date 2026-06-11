@@ -13,9 +13,9 @@
 		"windows": [
 			{
 				"title": "Squirrel",
-				"width": 300,
+				"width": 400,
 				"minWidth": 200,
-				"height": 400,
+				"height": 500,
 				"minHeight": 300,
 				"center": true,
 				"decorations": false,
