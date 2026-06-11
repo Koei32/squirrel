@@ -6,11 +6,21 @@ mod db;
 
 use anyhow::Result;
 use db::Database;
+use std::env::current_exe;
 use std::sync::atomic::AtomicBool;
 use tauri::{Builder, Manager};
 
 async fn run_tauri_app() -> Result<()> {
-    let db = Database::new().await?;
+    let db_url = format!(
+        "sqlite://{}/data.db?mode=rwc",
+        current_exe()
+            .expect("failed to get executable path")
+            .parent()
+            .expect("failed getting parent directory.")
+            .to_str()
+            .expect("failed converting directory to string")
+    );
+    let db = Database::new(&db_url).await?;
 
     // Whether or not to ignore clipboard events
     let skip_event = AtomicBool::new(false);
