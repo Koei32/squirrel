@@ -5,7 +5,7 @@
 	import { readText } from "@tauri-apps/plugin-clipboard-manager";
 	import { invoke } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
-	import { onMount, tick } from "svelte";
+	import { onMount } from "svelte";
 	import { TrayIcon, type TrayIconOptions } from "@tauri-apps/api/tray";
 	import { Menu } from "@tauri-apps/api/menu";
 	import { register } from "@tauri-apps/plugin-global-shortcut";
@@ -13,67 +13,76 @@
 
 	const window = getCurrentWindow();
 
-	let cbLog: Array<clipboardEvent> = $state([]);
-	let filteredCbLog: Array<clipboardEvent> = $derived(
-		cbLog.filter((event) =>
+	// All events received from the backend
+	let cbEvents: Array<clipboardEvent> = $state([]);
+	// Entries that are actually displayed due to current search query
+	let displayedEntries: Array<Entry> = $state([]);
+
+	// Selection tracking
+	let activeIndex: number = $state(0);
+	let activeEntry: Entry | undefined = $derived(displayedEntries[activeIndex]);
+
+	// Search stuff
+	let searchBar: HTMLInputElement;
+	let searchQuery = $state("");
+	let filteredCbEvents: Array<clipboardEvent> = $derived(
+		cbEvents.filter((event) =>
 			event.content.toLowerCase().includes(searchQuery.trim().toLowerCase()),
 		),
 	);
-	let displayedEntries: Array<Entry> = $state([]);
-	let activeIndex: number | undefined = $state(0);
-	let activeEntry: Entry | undefined = $derived(displayedEntries[activeIndex]);
 
+	// Main listener of backend events
 	listen<cbEventNotice>("cb-text-copy", async (event) => {
 		const text = readText();
-		cbLog.unshift({
+		cbEvents.unshift({
 			...event.payload,
 			content: await text,
 		});
-		// await tick();
-		// displayedEntries.length = cbLog.length;
 		activeEntry?.focusElement();
 	});
 
+	/**
+	 * Invokes the clear_history command in the backend and clears all entries
+	 */
 	async function clearHistory() {
 		await invoke("clear_history").catch((r) => {
 			console.log(r);
 		});
-		cbLog = [];
+		cbEvents = [];
 		displayedEntries = [];
 	}
 
 	function pinEntry() {
-		// todo
+		// TODO
 	}
 
+	// there's probably a better way to do this
 	function clamp(num: number, min: number, max: number) {
 		return Math.min(Math.max(num, min), max);
 	}
 
-	async function deleteEntry(id: number) {
-		cbLog = cbLog.filter((event) => event.id != id);
-		if (activeIndex) {
-			activeIndex = clamp(activeIndex, 0, filteredCbLog.length - 1);
-		}
-
-		// without this, something goes wonky and `displayedEntries` has a null
-		// element when the last entry is deleted. a bit confused.
-		// await tick();
-		// displayedEntries.length = cbLog.length;
+	/**
+	 * Removes the Entry associated with the passed `id` from the UI.
+	 * **Doesn't invoke the delete_entry command in the backend.**
+	 * This is supposed to be passed into the `onDelete` attribute of `Entry`.
+	 * @param id
+	 */
+	async function removeEntry(id: number) {
+		cbEvents = cbEvents.filter((event) => event.id != id);
+		activeIndex = clamp(activeIndex, 0, filteredCbEvents.length - 1);
 	}
 
+	// without this, something goes wonky and `displayedEntries` has a null
+	// element when the last entry is deleted. a bit confusing.
 	$effect(() => {
-		displayedEntries.length = filteredCbLog.length;
+		displayedEntries.length = filteredCbEvents.length;
 	});
 
+	/**
+	 * Master keyboard input handler
+	 * @param event
+	 */
 	async function handleKbInput(event: KeyboardEvent) {
-		// debug assert
-		// if (filteredCbLog.length != displayedEntries.length) {
-		// 	console.warn(
-		// 		`cblog: ${filteredCbLog.length} != ${displayedEntries.length} :dispentries`,
-		// 	);
-		// }
-
 		switch (event.key) {
 			case "Escape": {
 				event.preventDefault();
@@ -92,13 +101,13 @@
 		switch (event.key) {
 			case "ArrowDown": {
 				event.preventDefault();
-				activeIndex = clamp(activeIndex! + 1, 0, displayedEntries.length - 1);
+				activeIndex = clamp(activeIndex + 1, 0, displayedEntries.length - 1);
 				activeEntry?.focusElement();
 				break;
 			}
 			case "ArrowUp": {
 				event.preventDefault();
-				activeIndex = clamp(activeIndex! - 1, 0, displayedEntries.length - 1);
+				activeIndex = clamp(activeIndex - 1, 0, displayedEntries.length - 1);
 				activeEntry?.focusElement();
 				break;
 			}
@@ -130,18 +139,11 @@
 		}
 	}
 
-	let searchBar: HTMLInputElement;
-	let searchQuery = $state("");
-
-	async function searchHandler() {
-		console.log(displayedEntries.length);
-	}
-
 	onMount(() => {
 		let unlisten: UnlistenFn | undefined;
 
 		const initSetup = async () => {
-			// register shortcut to show the window
+			// Register shortcut to show the window
 			await register("CommandOrControl+Shift+V", (event) => {
 				if (event.state == "Pressed") {
 					window.show();
@@ -150,7 +152,7 @@
 				}
 			});
 
-			// system tray
+			// System tray
 			const menu = await Menu.new({
 				items: [
 					{
@@ -175,7 +177,7 @@
 			};
 			await TrayIcon.new(trayOptions);
 
-			// intercept close event to hide the window instead
+			// Intercept close event to hide the window instead
 			unlisten = await window.onCloseRequested(async (event) => {
 				event.preventDefault();
 				await window.hide();
@@ -185,7 +187,7 @@
 		initSetup();
 		activeEntry?.focusElement();
 
-		// cleanup handler
+		// Cleanup handler
 		return () => {
 			if (unlisten) {
 				unlisten();
@@ -201,20 +203,19 @@
 		<input
 			class="search"
 			bind:value={searchQuery}
-			oninput={searchHandler}
 			bind:this={searchBar}
 			placeholder="press / to search" />
 		<p>Clipboard history:</p>
 	</div>
 	<div class="feed">
-		{#each filteredCbLog as event, index (filteredCbLog[index].id)}
+		{#each filteredCbEvents as event, index (filteredCbEvents[index].id)}
 			<Entry
 				bind:this={displayedEntries[index]}
 				cbEvent={event}
 				onClick={() => {
 					activeIndex = index;
 				}}
-				onDelete={deleteEntry}
+				onDelete={removeEntry}
 				onPin={pinEntry} />
 		{:else}
 			<span class="no-history-text">no items</span>
@@ -241,7 +242,6 @@
 	}
 
 	.subhead {
-		/* width: 100%; */
 		padding-right: 0.3rem;
 		flex-direction: column;
 		justify-content: space-between;
@@ -288,6 +288,7 @@
 		color: #bbb;
 	}
 
+	/* TODO */
 	/* @media (prefers-color-scheme: dark) {
 		:root {
 			color: #f6f6f6;

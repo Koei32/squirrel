@@ -2,26 +2,23 @@
 	import { invoke } from "@tauri-apps/api/core";
 	const { cbEvent, active = false, onClick, onPin, onDelete } = $props();
 
-	export const id = cbEvent.id;
-
+	// Whether to show the checkmark or the copy icon
 	let isCopied = $state(false);
+	// This element
 	let element: HTMLElement | null = $state(null);
 
+	/**
+	 * Focuses this element
+	 */
 	export function focusElement() {
-		if (element) {
-			element.focus();
-		}
+		// element always exists
+		element!.focus();
 	}
 
-	export function handlePaste() {
-		invoke("paste_item", { id: cbEvent.id });
-	}
-
-	export async function handleRemove() {
-		invoke("remove_entry", { id: cbEvent.id });
-		await onDelete(cbEvent.id);
-	}
-
+	/**
+	 * Invokes the `copy_item` command in the backend, copying the Entry's
+	 * content to the clipboard.
+	 */
 	export async function handleCopy() {
 		isCopied = true;
 		invoke("copy_item", { id: cbEvent.id });
@@ -29,6 +26,23 @@
 		setTimeout(() => {
 			isCopied = false;
 		}, 1000);
+	}
+
+	/**
+	 * Invokes the paste_item command in the backend, pasting the Entry's
+	 * content via Ctrl+V emulation.
+	 */
+	export function handlePaste() {
+		invoke("paste_item", { id: cbEvent.id });
+	}
+
+	/**
+	 * Invokes the remove_entry command in the backend, deleting this entry
+	 * from the database and calling the UI removal function.
+	 */
+	export async function handleRemove() {
+		invoke("remove_entry", { id: cbEvent.id });
+		await onDelete(cbEvent.id);
 	}
 </script>
 
@@ -49,6 +63,7 @@
 	<div class="footer">
 		<span class="time">{new Date(cbEvent.timestamp).toLocaleString()}</span>
 		<div class="buttons">
+			<!-- Icons from https://lucide.dev -->
 			<button onclick={handleCopy} title="Copy">
 				{#if isCopied}
 					<svg
@@ -129,7 +144,6 @@
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		/* align-items: center; */
 		margin-bottom: 0.1rem;
 	}
 
@@ -212,12 +226,6 @@
 		/* fill: #bbb; */
 		color: #aaa;
 	}
-
-	/* button:hover {
-		transition: all 200ms;
-		box-shadow: 0px 0px 3px rgb(192, 192, 192);
-		background-color: #999;
-	} */
 
 	button:active {
 		background-color: #eee;
