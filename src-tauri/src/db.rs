@@ -49,6 +49,7 @@ impl Database {
         Ok(entry)
     }
 
+    /// Removes an entry from the database by its id
     pub async fn remove_entry(&self, id: u16) -> Result<()> {
         sqlx::query("DELETE from clipboard WHERE id=?;")
             .bind(id)
@@ -57,11 +58,12 @@ impl Database {
         Ok(())
     }
 
-    /// Gets all clipboard entries
+    /// Gets all clipboard entries from the database, most recent entries first.
     pub async fn get_entries(&self) -> Result<Vec<ClipboardEvent>> {
-        let results: Vec<ClipboardEvent> = sqlx::query_as("SELECT * FROM clipboard;")
-            .fetch_all(&self.pool)
-            .await?;
+        let results: Vec<ClipboardEvent> =
+            sqlx::query_as("SELECT * FROM clipboard ORDER BY id DESC;")
+                .fetch_all(&self.pool)
+                .await?;
         Ok(results)
     }
 

@@ -14,7 +14,7 @@ use std::{
     sync::atomic::{AtomicBool, Ordering::SeqCst},
     time::Duration,
 };
-use tauri::{AppHandle, Emitter, Manager, State};
+use tauri::{ipc::Channel, AppHandle, Emitter, Manager, State};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 
 #[derive(Clone, Debug, Serialize, Deserialize, sqlx::Type, Copy)]
@@ -179,7 +179,7 @@ pub async fn paste_item(
     copy_item(db, skip, id).await?;
     let mut keyboard = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
 
-    //  we'll think about mac some other day
+    // we'll think about mac some other day
     // #[cfg(target_os = "macos")]
     // let modifier = Key::Meta;
 
@@ -206,6 +206,20 @@ pub async fn paste_item(
 #[tauri::command(async)]
 pub async fn remove_entry(db: State<'_, Database>, id: u16) -> std::result::Result<(), String> {
     db.remove_entry(id).await.map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Sends the stored clipboard history over the provided channel,
+/// most recent entries first.
+#[tauri::command]
+pub async fn load_history(
+    db: State<'_, Database>,
+    on_event: Channel<ClipboardEvent>,
+) -> std::result::Result<(), String> {
+    let events = db.get_entries().await.map_err(|e| e.to_string())?;
+    for event in events {
+        let _ = on_event.send(event.clone());
+    }
     Ok(())
 }
 

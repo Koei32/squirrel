@@ -182,6 +182,14 @@
 		margin-bottom: 0;
 		margin-top: 0.25rem;
 		max-height: 6rem;
+		/* -webkit-mask-image: linear-gradient(
+			to bottom,
+			transparent 0px,
+			black 20px,
+			black calc(100% - 40px),
+			transparent 100%
+		); */
+		mask-image: linear-gradient(to bottom, black calc(100% - 0.2rem), transparent 100%);
 		max-width: 100%;
 		user-select: text;
 		overflow-y: auto;

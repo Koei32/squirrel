@@ -41,6 +41,7 @@ async fn run_tauri_app() -> Result<()> {
             clipboard::copy_item,
             clipboard::paste_item,
             clipboard::remove_entry,
+            clipboard::load_history,
             clipboard::clear_history,
         ])
         .run(tauri::generate_context!())?;

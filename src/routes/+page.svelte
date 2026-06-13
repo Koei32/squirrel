@@ -3,7 +3,7 @@
 	import Entry from "../lib/components/Entry.svelte";
 	import type { cbEventNotice, clipboardEvent } from "../lib/types";
 	import { readText } from "@tauri-apps/plugin-clipboard-manager";
-	import { invoke } from "@tauri-apps/api/core";
+	import { invoke, Channel } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 	import { onMount } from "svelte";
 	import { TrayIcon, type TrayIconOptions } from "@tauri-apps/api/tray";
@@ -40,6 +40,13 @@
 		});
 		activeEntry?.focusElement();
 	});
+
+	// Channel to stream over history on launch
+	const onEvent = new Channel<clipboardEvent>();
+	onEvent.onmessage = (event) => {
+		cbEvents.push(event);
+		console.log(`received ${event.id}`);
+	};
 
 	/**
 	 * Invokes the clear_history command in the backend and clears all entries
@@ -185,6 +192,9 @@
 		};
 
 		initSetup();
+
+		// Load clipboard history
+		invoke("load_history", { onEvent });
 		activeEntry?.focusElement();
 
 		// Cleanup handler
@@ -194,6 +204,8 @@
 			}
 		};
 	});
+
+	// TODO: split this giant script block into separate files ideally
 </script>
 
 <svelte:window on:keydown={handleKbInput} />
@@ -205,7 +217,6 @@
 			bind:value={searchQuery}
 			bind:this={searchBar}
 			placeholder="press / to search" />
-		<p>Clipboard history:</p>
 	</div>
 	<div class="feed">
 		{#each filteredCbEvents as event, index (filteredCbEvents[index].id)}
@@ -225,7 +236,7 @@
 
 <style>
 	:root {
-		font-family: sans-serif;
+		font-family: system-ui;
 		font-size: 16px;
 		color: #0f0f0f;
 		background-color: #f6f6f6;
@@ -242,6 +253,7 @@
 	}
 
 	.subhead {
+		margin-bottom: 0.5rem;
 		padding-right: 0.3rem;
 		flex-direction: column;
 		justify-content: space-between;
