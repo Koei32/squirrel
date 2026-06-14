@@ -138,7 +138,7 @@
 		max-width: 100%;
 		font-size: 0.8rem;
 		background-color: #eee;
-		border: 1px solid #bbb;
+		border: 1px solid var(--fg-accent);
 		border-radius: 3px;
 		padding: 0.5rem;
 		display: flex;
@@ -175,7 +175,7 @@
 	.time {
 		font-family: monospace;
 		font-size: 0.6rem;
-		color: #aaa;
+		color: var(--fg-secondary);
 	}
 
 	p {
@@ -207,7 +207,7 @@
 	}
 
 	::-webkit-scrollbar-thumb:hover {
-		background: #bbb;
+		background: var(--bg-secondary);
 	}
 
 	.buttons {
@@ -231,8 +231,7 @@
 
 	svg {
 		height: 0.75rem;
-		/* fill: #bbb; */
-		color: #aaa;
+		color: var(--fg-secondary);
 	}
 
 	button:active {

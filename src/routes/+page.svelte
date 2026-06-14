@@ -271,10 +271,14 @@
 
 <style>
 	:root {
+		--bg-primary: #f6f6f6;
+		--bg-secondary: #bbb;
+		--fg-primary: #0f0f0f;
+		--fg-secondary: #888;
 		font-family: system-ui;
-		font-size: 16px;
-		color: #0f0f0f;
-		background-color: #f6f6f6;
+		font-size: 1rem;
+		color: var(--fg-primary);
+		background-color: var(--bg-primary);
 		-webkit-text-size-adjust: 100%;
 	}
 
@@ -311,11 +315,6 @@
 		outline: none;
 	}
 
-	p {
-		margin: 0.5rem 0 0 0;
-		font-size: 0.8rem;
-	}
-
 	.feed {
 		scrollbar-gutter: stable;
 		scroll-behavior: smooth;
@@ -339,9 +338,10 @@
 		margin-top: 2rem;
 		margin-bottom: 0.5rem;
 	}
+
 	.str0 {
 		stroke-width: 120000;
-		stroke: #bbb;
+		stroke: var(--bg-secondary);
 	}
 
 	.no-history-text {
@@ -349,14 +349,14 @@
 		/* align-self: center; */
 		justify-self: center;
 		font-size: 0.75rem;
-		color: #bbb;
+		color: var(--bg-secondary);
 	}
 
 	/* TODO */
 	/* @media (prefers-color-scheme: dark) {
 		:root {
-			color: #f6f6f6;
-			background-color: #2f2f2f;
+			--bg-primary: #0f0f0f;
+			--fg-primary: #f6f6f6;
 		}
 	} */
 </style>

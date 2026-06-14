@@ -20,7 +20,7 @@
 		<defs>
 			<style type="text/css">
 				.str0 {
-					stroke: #555555;
+					stroke: var(--fg-secondary);
 					stroke-width: 279272;
 					stroke-linecap: round;
 					stroke-linejoin: round;
@@ -65,7 +65,7 @@
 		height: 1rem;
 		width: 100%;
 		margin: 0;
-		color: #555;
+		color: var(--fg-secondary);
 		text-align: center;
 		font-size: 0.75rem;
 		justify-self: center;
