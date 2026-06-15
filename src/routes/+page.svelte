@@ -305,6 +305,7 @@
 	}
 
 	input {
+		color: var(--fg-primary);
 		box-sizing: border-box;
 		background-color: var(--bg-secondary);
 		border-radius: 0.2rem;
