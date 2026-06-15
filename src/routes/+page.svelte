@@ -83,6 +83,7 @@
 	// element when the last entry is deleted. a bit confusing.
 	$effect(() => {
 		displayedEntries.length = filteredCbEvents.length;
+		console.log(activeIndex);
 	});
 
 	/**
@@ -253,7 +254,6 @@
 						</style>
 					</defs>
 					<g id="Layer_x0020_1">
-						<metadata id="CorelCorpID_0Corel-Layer" />
 						<path
 							class="fil0 str0"
 							d="M191084 2101478c-32624,-114108 -51448,-188951 -51448,-336450 0,-651832 493874,-1018213 797181,-1574375 20180,-37005 59617,-56384 101248,-49730 41631,6654 73053,37341 80699,78797 86651,469766 282619,1014688 -318390,1732668 -601009,717980 -655885,1002226 -655885,1351219 0,712355 860818,1268322 1434766,1512700 114853,48901 231266,72828 347098,71791 115832,1038 232240,-22885 347098,-71791 573952,-244383 1434766,-800345 1434766,-1512700 0,-348993 -54876,-633240 -655883,-1351219 -601007,-717980 -405043,-1262901 -318392,-1732668 7646,-41455 39067,-72142 80699,-78797 41631,-6654 81068,12726 101248,49730 303307,556163 797181,922543 797181,1574375 0,147500 -18823,222342 -51448,336450" />
@@ -272,9 +272,14 @@
 <style>
 	:root {
 		--bg-primary: #f6f6f6;
-		--bg-secondary: #bbb;
+		--bg-accent: #a9a9a9;
+		--bg-secondary: #eee;
+
 		--fg-primary: #0f0f0f;
-		--fg-secondary: #888;
+		--fg-accent: #999;
+
+		--black: #000; /* ehh */
+
 		font-family: system-ui;
 		font-size: 1rem;
 		color: var(--fg-primary);
@@ -283,9 +288,9 @@
 	}
 
 	.container {
-		height: 100vh;
+		box-sizing: border-box;
 		margin: 0;
-		margin-top: 2rem;
+		margin-top: 0.5rem;
 		display: flex;
 		flex-direction: column;
 		padding: 0rem 0.35rem 0rem 0.65rem;
@@ -300,10 +305,11 @@
 	}
 
 	input {
-		border-radius: 0.2rem;
-		border: 1px solid #aaa;
 		box-sizing: border-box;
-		height: 1.5rem;
+		background-color: var(--bg-secondary);
+		border-radius: 0.2rem;
+		border: 1px solid var(--fg-accent);
+		height: 1.75rem;
 		width: 100%;
 		margin: 0;
 		padding: 0;
@@ -311,7 +317,8 @@
 	}
 
 	input:focus {
-		border: 1px solid #333;
+		background-color: var(--bg-primary);
+		border: 1px solid var(--fg-primary);
 		outline: none;
 	}
 
@@ -340,23 +347,27 @@
 	}
 
 	.str0 {
-		stroke-width: 120000;
-		stroke: var(--bg-secondary);
+		stroke-width: 160000;
+		stroke: var(--fg-accent);
 	}
 
 	.no-history-text {
 		text-align: center;
-		/* align-self: center; */
 		justify-self: center;
 		font-size: 0.75rem;
-		color: var(--bg-secondary);
+		color: var(--fg-accent);
 	}
 
-	/* TODO */
-	/* @media (prefers-color-scheme: dark) {
+	@media (prefers-color-scheme: dark) {
 		:root {
 			--bg-primary: #0f0f0f;
-			--fg-primary: #f6f6f6;
+			--bg-secondary: #202020;
+			--bg-accent: #525252;
+
+			--fg-primary: #dedede;
+			--fg-accent: #828282;
+
+			--black: #fff;
 		}
-	} */
+	}
 </style>
