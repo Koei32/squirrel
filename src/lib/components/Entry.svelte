@@ -46,16 +46,17 @@
 	}
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="entry-container list-item"
 	bind:this={element}
 	class:active
 	tabindex="-1"
 	role="option"
+	onclick={onClick}
 	aria-selected={active}>
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="content" onclick={onClick}>
+	<div class="content">
 		<p data-selectable="true">
 			{cbEvent.content}
 		</p>
@@ -137,23 +138,21 @@
 		min-width: 0;
 		max-width: 100%;
 		font-size: 0.8rem;
-		background-color: #eee;
-		border: 1px solid #bbb;
+		background-color: var(--bg-secondary);
+		border: 1px solid var(--bg-accent);
 		border-radius: 3px;
 		padding: 0.5rem;
 		display: flex;
 		flex-direction: column;
 		justify-content: space-between;
-		margin-bottom: 0.1rem;
-	}
-
-	.entry-container:active {
-		background-color: #ddd;
+		margin-bottom: 0.2rem;
 	}
 
 	.entry-container:focus {
-		background-color: #ddd;
-		outline: 1px solid grey;
+		z-index: 9999;
+		background-color: var(--bg-primary);
+		outline: 1px solid var(--fg-accent);
+		/* box-shadow: 0 0 7px var(--fg-accent); */
 	}
 
 	.content {
@@ -175,20 +174,13 @@
 	.time {
 		font-family: monospace;
 		font-size: 0.6rem;
-		color: #aaa;
+		color: var(--fg-accent);
 	}
 
 	p {
 		margin-bottom: 0;
 		margin-top: 0.25rem;
 		max-height: 6rem;
-		/* -webkit-mask-image: linear-gradient(
-			to bottom,
-			transparent 0px,
-			black 20px,
-			black calc(100% - 40px),
-			transparent 100%
-		); */
 		mask-image: linear-gradient(to bottom, black calc(100% - 0.2rem), transparent 100%);
 		max-width: 100%;
 		user-select: text;
@@ -203,11 +195,11 @@
 
 	::-webkit-scrollbar-thumb {
 		border-radius: 50px;
-		background: #ccc;
+		background: var(--bg-accent);
 	}
 
 	::-webkit-scrollbar-thumb:hover {
-		background: #bbb;
+		background-color: var(--bg-secondary);
 	}
 
 	.buttons {
@@ -226,21 +218,19 @@
 		text-align: center;
 		border-radius: 100px;
 		transition: all 200ms;
-		/* outline: none; */
 	}
 
 	svg {
 		height: 0.75rem;
-		/* fill: #bbb; */
-		color: #aaa;
+		color: var(--fg-accent);
 	}
 
 	button:active {
-		background-color: #eee;
+		background-color: var(--bg-secondary);
 	}
 
 	svg:hover {
-		color: black;
+		color: var(--black);
 	}
 
 	.cross-icon:hover {
