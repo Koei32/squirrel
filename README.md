@@ -17,10 +17,10 @@ interface with the operating system's clipboard in order to listen to and captur
 ## Features
 
 - **Global hotkey**: Press Ctrl+Shift+V to bring up Squirrel.
-- **Quick paste**: Selecting a clipboard item and pressing Return instantly pastes it into the last focused window. 
+- **Quick paste**: Selecting a clipboard item and pressing Return instantly pastes it into the last focused window.
   <img width="800" height="450" alt="paste" src="https://github.com/user-attachments/assets/a08b4930-2d22-4dc8-8fbd-61f6bfa66b77" />
 
-- **Item search**: Instant exact string search. 
+- **Item search**: Instant exact string search.
   <img width="800" height="450" alt="search" src="https://github.com/user-attachments/assets/3fd53219-55e1-4f71-81db-9015e2fb4396" />
 - **Dark/light theme**: Squirrel uses the theme of your system.
   <img width="800" alt="darklight" src="https://github.com/user-attachments/assets/50d20dd9-e3f4-43d2-a1e3-6c0b74663f0b" />
@@ -30,29 +30,39 @@ interface with the operating system's clipboard in order to listen to and captur
   Though practically, the program might load the history a bit slowly when there's a very large amount of items.
 
 ## Installation
-The latest build is available in Releases. Squirrel is distributed as both a single file executable and a bundled 
+
+The latest build is available in Releases. Squirrel is distributed as both a single file executable and a bundled
 installer. If the portable version does not work, it's recommended to install Squirrel using the appropriate installer.
 
-Currently, there are only Windows builds. Linux releases will be available soon. 
+Currently, there are only Windows builds. Linux releases will be available soon.
 
 ## Building from source
+
 You can also build Squirrel from source.
+
 ### Requirements:
+
 - Rust >=1.95
 - npm >=11.13.0
 
 Older versions might work, though are untested.
 
 ### Instructions
+
 1. Clone the repository
+
 ```
 git clone https://github.com/Koei32/squirrel && cd squirrel
 ```
+
 2. Install dependencies
+
 ```
 npm install
 ```
+
 3. Build the Tauri app
+
 ```
 npm run tauri build
 ```

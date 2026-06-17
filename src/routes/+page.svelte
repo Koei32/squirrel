@@ -45,7 +45,6 @@
 	const onEvent = new Channel<clipboardEvent>();
 	onEvent.onmessage = (event) => {
 		cbEvents.push(event);
-		console.log(`received ${event.id}`);
 	};
 
 	/**
@@ -83,7 +82,6 @@
 	// element when the last entry is deleted. a bit confusing.
 	$effect(() => {
 		displayedEntries.length = filteredCbEvents.length;
-		console.log(activeIndex);
 	});
 
 	/**
