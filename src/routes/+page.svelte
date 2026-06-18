@@ -181,6 +181,8 @@
 			});
 			const trayOptions: TrayIconOptions = {
 				menu,
+				showMenuOnLeftClick: false,
+				icon: "icons/64x64.png",
 			};
 			await TrayIcon.new(trayOptions);
 
