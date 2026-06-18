@@ -40,11 +40,17 @@ using the appropriate installer.
 ### A note on Linux support
 
 While builds for Linux are available, the functionality is severely limited on wayland due to how
-Squirrel listens for hotkeys and emulates input. There are plans to rewrite parts of the backend
-to be more robust and potentially fix wayland functionality.
+Squirrel listens for hotkeys and emulates input.
 
-That said, Squirrel works on X11 for the most part, though it isn't tested as thoroughly as it has
-been on Windows.
+A _potential_ fix for this is to set the `GDK_BACKEND` environment variable to `x11` for Squirrel.
+
+```bash
+GDK_BACKEND=x11 ./squirrel
+```
+
+Squirrel works well on X11 for the most part, though it isn't tested as thoroughly as it has been
+on Windows. There are plans to rewrite parts of the backend to be more robust and potentially fix
+wayland functionality.
 
 ## Building from source
 
@@ -85,7 +91,7 @@ All icons except the Squirrel logo are Copyright (c) 2026 Lucide Icons and Contr
 
 ### TODO
 
-- [ ] linux support & testing
+- [ ] proper linux support & testing
 - [ ] pinning entries
 - [ ] image & file copy support
 - [ ] lazy loading history
