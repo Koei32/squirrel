@@ -7,6 +7,7 @@
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 	import { onMount } from "svelte";
 	import { TrayIcon, type TrayIconOptions } from "@tauri-apps/api/tray";
+	import { defaultWindowIcon } from "@tauri-apps/api/app";
 	import { Menu } from "@tauri-apps/api/menu";
 	import { register } from "@tauri-apps/plugin-global-shortcut";
 	import { exit } from "@tauri-apps/plugin-process";
@@ -45,7 +46,6 @@
 	const onEvent = new Channel<clipboardEvent>();
 	onEvent.onmessage = (event) => {
 		cbEvents.push(event);
-		console.log(`received ${event.id}`);
 	};
 
 	/**
@@ -83,7 +83,6 @@
 	// element when the last entry is deleted. a bit confusing.
 	$effect(() => {
 		displayedEntries.length = filteredCbEvents.length;
-		console.log(activeIndex);
 	});
 
 	/**
@@ -182,6 +181,8 @@
 			});
 			const trayOptions: TrayIconOptions = {
 				menu,
+				showMenuOnLeftClick: false,
+				icon: "icons/64x64.png",
 			};
 			await TrayIcon.new(trayOptions);
 

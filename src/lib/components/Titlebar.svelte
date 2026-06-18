@@ -51,7 +51,6 @@
 <style>
 	.titlebar {
 		box-sizing: border-box;
-		/* margin-top: 1px; */
 		cursor: move;
 		background-color: var(--bg-secondary);
 		border-bottom: 1px solid var(--fg-accent);
@@ -61,10 +60,6 @@
 		flex-direction: row;
 		align-items: center;
 		justify-content: center;
-		/* position: fixed; */
-		/* top: 0;
-		left: 0;
-		right: 0; */
 	}
 	.logo {
 		height: 1rem;
