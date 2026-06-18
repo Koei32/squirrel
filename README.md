@@ -33,14 +33,15 @@ interface with the operating system's clipboard in order to listen to and captur
 
 ## Installation
 
-The latest build is available in Releases. Squirrel is distributed as both a single file executable and a bundled
-installer. If the portable version does not work, it's recommended to install Squirrel using the appropriate installer.
+The latest build is available in Releases. Squirrel is distributed as both a single file executable
+and a bundled installer. If the portable version does not work, it's recommended to install Squirrel
+using the appropriate installer.
 
 ### A note on Linux support
 
 While builds for Linux are available, the functionality is severely limited on wayland due to how
 Squirrel listens for hotkeys and emulates input. There are plans to rewrite parts of the backend
-to be more robust.
+to be more robust and potentially fix wayland functionality.
 
 That said, Squirrel works on X11 for the most part, though it isn't tested as thoroughly as it has
 been on Windows.
@@ -60,19 +61,19 @@ Older versions might work, though are untested.
 
 1. Clone the repository
 
-```
+```bash
 git clone https://github.com/Koei32/squirrel && cd squirrel
 ```
 
 2. Install dependencies
 
-```
+```bash
 npm install
 ```
 
 3. Build the Tauri app
 
-```
+```bash
 npm run tauri build
 ```
 
@@ -82,7 +83,7 @@ The executable is output in `src-tauri/target/release/`, and the bundles in `src
 
 All icons except the Squirrel logo are Copyright (c) 2026 Lucide Icons and Contributors (https://lucide.dev/)
 
-#### TODO
+### TODO
 
 - [ ] linux support & testing
 - [ ] pinning entries
