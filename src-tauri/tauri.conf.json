@@ -26,6 +26,10 @@
 				"scrollBarStyle": "default"
 			}
 		],
+		"trayIcon": {
+			"iconPath": "icons/64x64.png",
+			"iconAsTemplate": true
+		},
 		"security": {
 			"csp": null
 		}
