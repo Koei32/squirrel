@@ -36,6 +36,16 @@ impl From<CbEventType> for String {
     }
 }
 
+impl CbEventType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            CbEventType::Text => "text",
+            CbEventType::Image => "image",
+            CbEventType::File => "file",
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, FromRow)]
 pub struct ClipboardEvent {
     pub id: u16,
