@@ -32,7 +32,7 @@ impl Database {
             VALUES (?, ?, ?) RETURNING *;
             ",
         )
-        .bind(String::from(event.event_type))
+        .bind(event.event_type)
         .bind(event.content)
         .bind(event.timestamp)
         .fetch_one(&self.pool)

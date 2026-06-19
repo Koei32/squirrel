@@ -16,5 +16,3 @@ export type cbEventNotice = {
 	event_type: cbEventType;
 	timestamp: string;
 };
-
-// export type cbEventType = "text" | "image" | "file";
