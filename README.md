@@ -95,3 +95,5 @@ All icons except the Squirrel logo are Copyright (c) 2026 Lucide Icons and Contr
 - [ ] pinning entries
 - [ ] image & file copy support
 - [ ] lazy loading history
+- [ ] custom data storage format (?)
+- [ ] mac support (?)
