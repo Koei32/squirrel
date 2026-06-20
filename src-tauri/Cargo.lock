@@ -3850,6 +3850,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clipboard-rs",
+ "dirs",
  "enigo",
  "serde",
  "serde_json",
