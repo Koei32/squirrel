@@ -158,33 +158,6 @@
 				}
 			});
 
-			// System tray
-			const menu = await Menu.new({
-				items: [
-					{
-						id: "show",
-						text: "Show Squirrel",
-						action: async () => {
-							window.setFocus();
-							await window.show();
-						},
-					},
-					{
-						id: "quit",
-						text: "Quit",
-						action: async () => {
-							exit(0);
-						},
-					},
-				],
-			});
-			const trayOptions: TrayIconOptions = {
-				menu,
-				showMenuOnLeftClick: false,
-				icon: "icons/64x64.png",
-			};
-			await TrayIcon.new(trayOptions);
-
 			// Intercept close event to hide the window instead
 			unlisten = await window.onCloseRequested(async (event) => {
 				event.preventDefault();

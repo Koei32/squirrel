@@ -8,7 +8,12 @@ use anyhow::Result;
 use db::Database;
 use std::fs::create_dir_all;
 use std::sync::atomic::AtomicBool;
-use tauri::{Builder, Manager};
+use tauri::{
+    image::Image,
+    menu::{Menu, MenuItem},
+    tray::TrayIconBuilder,
+    Builder, Manager,
+};
 
 async fn run_tauri_app() -> Result<()> {
     let mut db_url = dirs::data_dir().expect("Failed to get data directory");
@@ -24,6 +29,30 @@ async fn run_tauri_app() -> Result<()> {
 
     Builder::default()
         .setup(move |app| {
+            let icon_bytes = include_bytes!("../icons/64x64.png");
+            let icon = Image::from_bytes(icon_bytes).expect("Failed to parse icon bytes");
+
+            let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+            let show_i = MenuItem::with_id(app, "show", "Show window", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
+
+            TrayIconBuilder::new()
+                .menu(&menu)
+                .icon(icon)
+                .build(app)?
+                .on_menu_event(|app, event| match event.id.as_ref() {
+                    "quit" => {
+                        app.exit(0);
+                    }
+                    "show" => {
+                        let _ = app.get_webview_window("main").unwrap().set_focus();
+                        let _ = app.get_webview_window("main").unwrap().show();
+                    }
+                    _ => {
+                        println!("Unhandled menu item: {:?}", event.id);
+                    }
+                });
+
             app.manage(db);
             app.manage(skip_event);
             clipboard::start_clipboard_listener(app.handle().clone())?;
