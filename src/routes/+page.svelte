@@ -200,8 +200,7 @@
 				onClick={() => {
 					activeIndex = index;
 				}}
-				onDelete={removeEntry}
-				onPin={pinEntry} />
+				onDelete={removeEntry} />
 		{:else}
 			<div class="no-items">
 				<svg

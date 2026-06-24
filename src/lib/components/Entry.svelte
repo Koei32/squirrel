@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/core";
-	const { cbEvent, active = false, onClick, onPin, onDelete } = $props();
+	const { cbEvent, active = false, onClick, onDelete } = $props();
 
 	// Whether to show the checkmark or the copy icon
 	let isCopied = $state(false);
@@ -26,6 +26,14 @@
 		setTimeout(() => {
 			isCopied = false;
 		}, 1000);
+	}
+
+	/**
+	 * Invokes the pin_entry command in the backend, marking the Entry as
+	 * pinned
+	 */
+	export function handlePin() {
+		invoke("pin_item", { id: cbEvent.id });
 	}
 
 	/**
@@ -98,7 +106,7 @@
 					</svg>
 				{/if}
 			</button>
-			<!-- <button onclick={onPin} title="Pin">
+			<button onclick={handlePin} title="Pin">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
@@ -113,7 +121,7 @@
 					<path d="M12 17v5" /><path
 						d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
 				</svg>
-			</button> -->
+			</button>
 			<button onclick={handleRemove} title="Delete">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"

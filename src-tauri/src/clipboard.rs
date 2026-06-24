@@ -52,6 +52,7 @@ pub struct ClipboardEvent {
     pub event_type: CbEventType,
     pub content: String,
     pub timestamp: String,
+    pub is_pinned: bool,
 }
 
 /// The minimal payload that will be sent to the frontend. Doesn't have content.
@@ -60,6 +61,7 @@ pub struct ClipboardEventNotice {
     pub id: u16,
     pub event_type: CbEventType,
     pub timestamp: String,
+    pub is_pinned: bool,
 }
 
 impl From<ClipboardEvent> for ClipboardEventNotice {
@@ -68,6 +70,7 @@ impl From<ClipboardEvent> for ClipboardEventNotice {
             id: value.id,
             event_type: value.event_type,
             timestamp: value.timestamp,
+            is_pinned: value.is_pinned,
         }
     }
 }
@@ -125,6 +128,7 @@ impl ClipboardHandler for ClipboardListener {
                 event_type: CbEventType::Text,
                 content,
                 timestamp: Local::now().to_rfc3339(),
+                is_pinned: false,
             };
             self.last_hash = Some(self.calculate_hash(&event.content));
             let _ = self.tx.send(event);

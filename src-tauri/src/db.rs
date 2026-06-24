@@ -28,13 +28,14 @@ impl Database {
     pub async fn create_entry(&self, event: ClipboardEvent) -> Result<ClipboardEvent> {
         let entry: ClipboardEvent = sqlx::query_as(
             "
-            INSERT INTO clipboard (event_type, content, timestamp) 
-            VALUES (?, ?, ?) RETURNING *;
+            INSERT INTO clipboard (event_type, content, timestamp, is_pinned) 
+            VALUES (?, ?, ?, ?) RETURNING *;
             ",
         )
         .bind(event.event_type.as_str())
         .bind(event.content)
         .bind(event.timestamp)
+        .bind(event.is_pinned)
         .fetch_one(&self.pool)
         .await?;
         Ok(entry)
