@@ -31,12 +31,13 @@
 	}
 
 	/**
-	 * Invokes the pin_entry command in the backend, marking the Entry as
-	 * pinned
+	 * Sets the pinned state of the Entry and invokes the `pin_entry` command
+	 * in the backend.
 	 */
 	export function handlePin() {
-		onPin(cbEvent.id);
 		invoke("pin_entry", { id: cbEvent.id, isPinned });
+		onPin(cbEvent.id);
+		onClick();
 	}
 
 	/**
@@ -60,7 +61,7 @@
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="entry-container list-item"
+	class="entry-container list-item {isPinned ? 'pinned' : ''}"
 	bind:this={element}
 	class:active
 	tabindex="-1"
@@ -109,7 +110,11 @@
 					</svg>
 				{/if}
 			</button>
-			<button onclick={handlePin} title={isPinned ? "Unpin" : "Pin"}>
+			<button
+				onclick={() => {
+					handlePin();
+				}}
+				title={isPinned ? "Unpin" : "Pin"}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
@@ -146,6 +151,7 @@
 
 <style>
 	.entry-container {
+		box-sizing: border-box;
 		min-width: 0;
 		max-width: 100%;
 		font-size: 0.8rem;
@@ -157,6 +163,10 @@
 		flex-direction: column;
 		justify-content: space-between;
 		margin-bottom: 0.2rem;
+	}
+
+	.pinned {
+		border: 2px solid var(--fg-accent);
 	}
 
 	.entry-container:focus {
@@ -249,7 +259,8 @@
 	}
 
 	.filled {
-		fill: var(--fg-accent);
+		fill: var(--fg-primary);
+		color: var(--fg-primary);
 	}
 
 	.check-icon,

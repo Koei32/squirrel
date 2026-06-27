@@ -70,7 +70,7 @@
 	}
 
 	function setPinned(id: number) {
-		// non-null assertion: pinEntry is only called when an Entry of that
+		// non-null assertion: setPinned is only called when an Entry of that
 		// id exists.
 		const was = cbEvents.find((event) => event.id == id)!.is_pinned;
 		cbEvents.find((event) => event.id == id)!.is_pinned = !was;
@@ -278,6 +278,7 @@
 		box-sizing: border-box;
 		margin: 0;
 		margin-top: 0.5rem;
+		height: calc(100vh - 0.5rem);
 		display: flex;
 		flex-direction: column;
 		padding: 0rem 0.35rem 0rem 0.65rem;
@@ -311,14 +312,15 @@
 	}
 
 	.feed {
+		box-sizing: border-box;
 		scrollbar-gutter: stable;
 		scroll-behavior: smooth;
 		display: flex;
 		flex-direction: column;
 		justify-content: start;
-		height: 80vh; /* ehh */
 		overflow-y: auto;
 		padding: 1px;
+		padding-right: 3px;
 	}
 
 	.no-items {
