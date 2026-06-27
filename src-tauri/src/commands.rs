@@ -66,6 +66,7 @@ pub async fn pin_entry(
     id: u16,
     is_pinned: bool,
 ) -> std::result::Result<(), String> {
+    println!("{} requested to be set to {}", id, is_pinned);
     db.set_pinned(id, is_pinned)
         .await
         .map_err(|e| e.to_string())?;
