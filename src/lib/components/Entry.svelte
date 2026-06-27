@@ -249,8 +249,7 @@
 	}
 
 	.filled {
-		fill: #6b8dff;
-		color: #6b8dff;
+		fill: var(--fg-accent);
 	}
 
 	.check-icon,
