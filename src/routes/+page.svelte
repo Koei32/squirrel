@@ -73,7 +73,6 @@
 		// non-null assertion: pinEntry is only called when an Entry of that
 		// id exists.
 		const was = cbEvents.find((event) => event.id == id)!.is_pinned;
-		console.log(`entry with id ${id} was requested to set to ${!was}`);
 		cbEvents.find((event) => event.id == id)!.is_pinned = !was;
 	}
 
