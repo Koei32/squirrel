@@ -59,7 +59,6 @@ pub struct ClipboardEventNotice {
     pub id: u16,
     pub event_type: CbEventType,
     pub timestamp: String,
-    pub is_pinned: bool,
 }
 
 impl From<ClipboardEvent> for ClipboardEventNotice {
@@ -68,7 +67,6 @@ impl From<ClipboardEvent> for ClipboardEventNotice {
             id: value.id,
             event_type: value.event_type,
             timestamp: value.timestamp,
-            is_pinned: value.is_pinned,
         }
     }
 }
