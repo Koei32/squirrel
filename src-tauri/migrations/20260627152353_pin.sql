@@ -1,0 +1,1 @@
+ALTER TABLE clipboard ADD COLUMN is_pinned INTEGER NOT NULL CHECK (is_pinned IN (0, 1)) DEFAULT 0;
