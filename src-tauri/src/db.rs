@@ -1,7 +1,7 @@
 //! database and things like that
 
 use crate::clipboard::ClipboardEvent;
-use anyhow::Result;
+use anyhow::{Ok, Result};
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     SqlitePool,
@@ -66,6 +66,16 @@ impl Database {
                 .fetch_all(&self.pool)
                 .await?;
         Ok(results)
+    }
+
+    /// Sets the pinned status of an entry
+    pub async fn set_pinned(&self, id: u16, is_pinned: bool) -> Result<()> {
+        sqlx::query("UPDATE clipboard SET is_pinned = ? WHERE id = ?;")
+            .bind(is_pinned as u8)
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 
     /// Clears the whole database. (!)

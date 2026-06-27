@@ -2,6 +2,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod clipboard;
+mod commands;
 mod db;
 
 use anyhow::Result;
@@ -64,11 +65,12 @@ async fn run_tauri_app() -> Result<()> {
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_prevent_default::init())
         .invoke_handler(tauri::generate_handler![
-            clipboard::copy_item,
-            clipboard::paste_item,
-            clipboard::remove_entry,
-            clipboard::load_history,
-            clipboard::clear_history,
+            commands::clear_history,
+            commands::copy_item,
+            commands::load_history,
+            commands::paste_item,
+            commands::pin_entry,
+            commands::remove_entry,
         ])
         .run(tauri::generate_context!())?;
 
