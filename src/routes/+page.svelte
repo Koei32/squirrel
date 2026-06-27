@@ -18,6 +18,9 @@
 	let pinnedIds: Array<number> = $derived(
 		cbEvents.filter((event) => event.is_pinned).map((event) => event.id),
 	);
+
+	let feed: HTMLDivElement | undefined = $state();
+
 	// Selection tracking
 	let activeIndex: number = $state(0);
 	let activeEntry: Entry | undefined = $derived(displayedEntries[activeIndex]);
@@ -74,6 +77,7 @@
 		// id exists.
 		const was = cbEvents.find((event) => event.id == id)!.is_pinned;
 		cbEvents.find((event) => event.id == id)!.is_pinned = !was;
+		feed?.scrollTo(0, 0);
 	}
 
 	// there's probably a better way to do this
@@ -206,7 +210,7 @@
 			bind:this={searchBar}
 			placeholder="press / to search" />
 	</div>
-	<div class="feed">
+	<div class="feed" bind:this={feed}>
 		{#each filteredCbEvents as event, index (filteredCbEvents[index].id)}
 			<Entry
 				bind:this={displayedEntries[index]}
@@ -278,7 +282,7 @@
 		box-sizing: border-box;
 		margin: 0;
 		margin-top: 0.5rem;
-		height: calc(100vh - 0.5rem);
+		height: calc(100vh - 2rem);
 		display: flex;
 		flex-direction: column;
 		padding: 0rem 0.35rem 0rem 0.65rem;
