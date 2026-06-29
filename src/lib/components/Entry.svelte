@@ -193,15 +193,18 @@
 		margin-bottom: 0.2rem;
 	}
 
-	.pinned {
-		border: 2px solid var(--fg-accent);
-	}
-
 	.entry-container:focus {
 		z-index: 9999;
-		background-color: var(--bg-primary);
-		outline: 1px solid var(--fg-accent);
-		/* box-shadow: 0 0 7px var(--fg-accent); */
+		background-color: var(--entry-focus);
+		outline: 1px solid var(--black);
+	}
+
+	.pinned {
+		background-color: var(--entry-pinned);
+	}
+
+	.pinned:focus {
+		background-color: var(--entry-pinned-focus);
 	}
 
 	.content {

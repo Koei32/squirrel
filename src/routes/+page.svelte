@@ -243,6 +243,10 @@
 		--fg-primary: #0f0f0f;
 		--fg-accent: #999;
 
+		--entry-focus: #d6d6e1;
+		--entry-pinned: #eaffca;
+		--entry-pinned-focus: #cbddaf;
+
 		--black: #000; /* ehh */
 
 		font-family: system-ui;
@@ -256,7 +260,7 @@
 		box-sizing: border-box;
 		margin: 0;
 		margin-top: 0.5rem;
-		height: calc(100vh - 2rem);
+		height: calc(100vh - 2.75rem);
 		display: flex;
 		flex-direction: column;
 		padding: 0rem 0.35rem 0rem 0.65rem;
