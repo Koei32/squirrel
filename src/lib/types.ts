@@ -9,6 +9,7 @@ export type clipboardEvent = {
 	event_type: cbEventType;
 	content: string;
 	timestamp: string;
+	is_pinned: boolean;
 };
 
 export type cbEventNotice = {

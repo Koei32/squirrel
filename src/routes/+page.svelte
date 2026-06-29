@@ -6,10 +6,7 @@
 	import { invoke, Channel } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 	import { onMount } from "svelte";
-	import { TrayIcon, type TrayIconOptions } from "@tauri-apps/api/tray";
-	import { Menu } from "@tauri-apps/api/menu";
 	import { register } from "@tauri-apps/plugin-global-shortcut";
-	import { exit } from "@tauri-apps/plugin-process";
 
 	const window = getCurrentWindow();
 
@@ -17,6 +14,12 @@
 	let cbEvents: Array<clipboardEvent> = $state([]);
 	// Entries that are actually displayed due to current search query
 	let displayedEntries: Array<Entry> = $state([]);
+	// IDs of the entries that are pinned
+	let pinnedIds: Array<number> = $derived(
+		cbEvents.filter((event) => event.is_pinned).map((event) => event.id),
+	);
+
+	let feed: HTMLDivElement | undefined = $state();
 
 	// Selection tracking
 	let activeIndex: number = $state(0);
@@ -26,9 +29,19 @@
 	let searchBar: HTMLInputElement;
 	let searchQuery = $state("");
 	let filteredCbEvents: Array<clipboardEvent> = $derived(
-		cbEvents.filter((event) =>
-			event.content.toLowerCase().includes(searchQuery.trim().toLowerCase()),
-		),
+		cbEvents
+			.filter(
+				(event) =>
+					event.content.toLowerCase().includes(searchQuery.trim().toLowerCase()) &&
+					event.is_pinned,
+			)
+			.concat(
+				cbEvents.filter(
+					(event) =>
+						event.content.toLowerCase().includes(searchQuery.trim().toLowerCase()) &&
+						!event.is_pinned,
+				),
+			),
 	);
 
 	// Main listener of backend events
@@ -37,6 +50,7 @@
 		cbEvents.unshift({
 			...event.payload,
 			content: await text,
+			is_pinned: false,
 		});
 		activeEntry?.focusElement();
 	});
@@ -58,8 +72,12 @@
 		displayedEntries = [];
 	}
 
-	function pinEntry() {
-		// TODO
+	function setPinned(id: number) {
+		// non-null assertion: setPinned is only called when an Entry of that
+		// id exists.
+		const was = cbEvents.find((event) => event.id == id)!.is_pinned;
+		cbEvents.find((event) => event.id == id)!.is_pinned = !was;
+		feed?.scrollTo(0, 0);
 	}
 
 	// there's probably a better way to do this
@@ -73,7 +91,7 @@
 	 * This is supposed to be passed into the `onDelete` attribute of `Entry`.
 	 * @param id
 	 */
-	async function removeEntry(id: number) {
+	function removeEntry(id: number) {
 		cbEvents = cbEvents.filter((event) => event.id != id);
 		activeIndex = clamp(activeIndex, 0, filteredCbEvents.length - 1);
 	}
@@ -124,7 +142,7 @@
 			}
 			case "p": {
 				if (document.activeElement == searchBar) return;
-				pinEntry();
+				activeEntry?.handlePin();
 				break;
 			}
 			case "Enter": {
@@ -192,7 +210,7 @@
 			bind:this={searchBar}
 			placeholder="press / to search" />
 	</div>
-	<div class="feed">
+	<div class="feed" bind:this={feed}>
 		{#each filteredCbEvents as event, index (filteredCbEvents[index].id)}
 			<Entry
 				bind:this={displayedEntries[index]}
@@ -201,7 +219,7 @@
 					activeIndex = index;
 				}}
 				onDelete={removeEntry}
-				onPin={pinEntry} />
+				onPin={setPinned} />
 		{:else}
 			<div class="no-items">
 				<svg
@@ -264,6 +282,7 @@
 		box-sizing: border-box;
 		margin: 0;
 		margin-top: 0.5rem;
+		height: calc(100vh - 2rem);
 		display: flex;
 		flex-direction: column;
 		padding: 0rem 0.35rem 0rem 0.65rem;
@@ -297,14 +316,15 @@
 	}
 
 	.feed {
+		box-sizing: border-box;
 		scrollbar-gutter: stable;
 		scroll-behavior: smooth;
 		display: flex;
 		flex-direction: column;
 		justify-content: start;
-		height: 80vh; /* ehh */
 		overflow-y: auto;
 		padding: 1px;
+		padding-right: 3px;
 	}
 
 	.no-items {
