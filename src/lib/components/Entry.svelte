@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { invoke } from "@tauri-apps/api/core";
 	const { cbEvent, active = false, onClick, onDelete, onPin } = $props();
+	import { getCurrentWindow } from "@tauri-apps/api/window";
+
+	export const window = getCurrentWindow();
 
 	// Whether to show the checkmark or the copy icon
 	let isCopied = $state(false);
@@ -56,12 +59,37 @@
 		invoke("remove_entry", { id: cbEvent.id });
 		onDelete(cbEvent.id);
 	}
+
+	function handleKeyDown(event: KeyboardEvent) {
+		switch (event.key) {
+			case "c": {
+				handleCopy();
+				break;
+			}
+			case "p": {
+				handlePin();
+				break;
+			}
+			case "Enter": {
+				window.hide();
+				setTimeout(() => {
+					handlePaste();
+				}, 5);
+				break;
+			}
+			case "Delete": {
+				handleRemove();
+				break;
+			}
+		}
+	}
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="entry-container list-item {isPinned ? 'pinned' : ''}"
+	onkeydown={handleKeyDown}
 	bind:this={element}
 	class:active
 	tabindex="-1"

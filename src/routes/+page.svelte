@@ -14,10 +14,6 @@
 	let cbEvents: Array<clipboardEvent> = $state([]);
 	// Entries that are actually displayed due to current search query
 	let displayedEntries: Array<Entry> = $state([]);
-	// IDs of the entries that are pinned
-	let pinnedIds: Array<number> = $derived(
-		cbEvents.filter((event) => event.is_pinned).map((event) => event.id),
-	);
 
 	let feed: HTMLDivElement | undefined = $state();
 
@@ -52,7 +48,6 @@
 			content: await text,
 			is_pinned: false,
 		});
-		activeEntry?.focusElement();
 	});
 
 	// Channel to stream over history on launch
@@ -102,11 +97,19 @@
 		displayedEntries.length = filteredCbEvents.length;
 	});
 
+	$effect(() => {
+		cbEvents;
+		activeIndex;
+		if (document.activeElement !== searchBar) {
+			activeEntry?.focusElement();
+		}
+	});
+
 	/**
 	 * Master keyboard input handler
 	 * @param event
 	 */
-	async function handleKbInput(event: KeyboardEvent) {
+	async function handleNavigation(event: KeyboardEvent) {
 		switch (event.key) {
 			case "Escape": {
 				event.preventDefault();
@@ -117,12 +120,9 @@
 				if (document.activeElement != searchBar) {
 					event.preventDefault();
 					searchBar.focus();
-					break;
 				}
+				break;
 			}
-		}
-
-		switch (event.key) {
 			case "ArrowDown": {
 				event.preventDefault();
 				activeIndex = clamp(activeIndex + 1, 0, displayedEntries.length - 1);
@@ -134,31 +134,6 @@
 				activeIndex = clamp(activeIndex - 1, 0, displayedEntries.length - 1);
 				activeEntry?.focusElement();
 				break;
-			}
-			case "c": {
-				if (document.activeElement == searchBar) return;
-				activeEntry?.handleCopy();
-				break;
-			}
-			case "p": {
-				if (document.activeElement == searchBar) return;
-				activeEntry?.handlePin();
-				break;
-			}
-			case "Enter": {
-				window.hide();
-				setTimeout(() => {
-					activeEntry?.handlePaste();
-				}, 50);
-				break;
-			}
-			case "Delete": {
-				if (document.activeElement == searchBar) return;
-				activeEntry?.handleRemove();
-				break;
-			}
-			default: {
-				searchBar.focus();
 			}
 		}
 	}
@@ -187,7 +162,6 @@
 
 		// Load clipboard history
 		invoke("load_history", { onEvent });
-		activeEntry?.focusElement();
 
 		// Cleanup handler
 		return () => {
@@ -200,7 +174,7 @@
 	// TODO: split this giant script block into separate files ideally
 </script>
 
-<svelte:window on:keydown={handleKbInput} />
+<svelte:window on:keydown={handleNavigation} />
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <main class="container" data-selectable="true">
 	<div class="subhead">
