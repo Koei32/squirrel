@@ -72,7 +72,7 @@
 		// id exists.
 		const was = cbEvents.find((event) => event.id == id)!.is_pinned;
 		cbEvents.find((event) => event.id == id)!.is_pinned = !was;
-		feed?.scrollTo(0, 0);
+		feed!.scrollTo(0, 0);
 	}
 
 	// there's probably a better way to do this
