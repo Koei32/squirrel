@@ -3,7 +3,8 @@
 	const { cbEvent, active = false, onClick, onDelete, onPin } = $props();
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 
-	export const window = getCurrentWindow();
+	const window = getCurrentWindow();
+	export const id = cbEvent.id;
 
 	// Whether to show the checkmark or the copy icon
 	let isCopied = $state(false);
@@ -40,7 +41,9 @@
 	export function handlePin() {
 		invoke("pin_entry", { id: cbEvent.id, isPinned });
 		onPin(cbEvent.id);
-		onClick();
+		if (isPinned) {
+			onClick();
+		}
 	}
 
 	/**

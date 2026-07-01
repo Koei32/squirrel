@@ -5,7 +5,7 @@
 	import { readText } from "@tauri-apps/plugin-clipboard-manager";
 	import { invoke, Channel } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
 	import { register } from "@tauri-apps/plugin-global-shortcut";
 
 	const window = getCurrentWindow();
@@ -67,12 +67,14 @@
 		displayedEntries = [];
 	}
 
-	function setPinned(id: number) {
+	async function setPinned(id: number) {
 		// non-null assertion: setPinned is only called when an Entry of that
 		// id exists.
 		const was = cbEvents.find((event) => event.id == id)!.is_pinned;
 		cbEvents.find((event) => event.id == id)!.is_pinned = !was;
-		feed!.scrollTo(0, 0);
+		await tick();
+		const position = displayedEntries.findIndex((event) => event.id == id);
+		activeIndex = position;
 	}
 
 	// there's probably a better way to do this
@@ -134,6 +136,9 @@
 				activeIndex = clamp(activeIndex - 1, 0, displayedEntries.length - 1);
 				activeEntry?.focusElement();
 				break;
+			}
+			case "ArrowRight": {
+				console.log(activeIndex);
 			}
 		}
 	}
@@ -244,8 +249,8 @@
 		--fg-accent: #999;
 
 		--entry-focus: #d6d6e1;
-		--entry-pinned: #eaffca;
-		--entry-pinned-focus: #cbddaf;
+		--entry-pinned: #fffcca;
+		--entry-pinned-focus: #dddaaf;
 
 		--black: #000; /* ehh */
 
@@ -338,6 +343,10 @@
 
 			--fg-primary: #dedede;
 			--fg-accent: #828282;
+
+			--entry-focus: #39393d;
+			--entry-pinned: #565439;
+			--entry-pinned-focus: #43432c;
 
 			--black: #fff;
 		}
