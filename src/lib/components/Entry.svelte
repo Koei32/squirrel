@@ -64,25 +64,30 @@
 	}
 
 	function handleKeyDown(event: KeyboardEvent) {
-		switch (event.key) {
-			case "c": {
-				handleCopy();
-				break;
+		if (event.ctrlKey || event.metaKey) {
+			switch (event.key) {
+				case "c": {
+					handleCopy();
+					break;
+				}
+				case "p": {
+					handlePin();
+					break;
+				}
 			}
-			case "p": {
-				handlePin();
-				break;
-			}
-			case "Enter": {
-				window.hide();
-				setTimeout(() => {
-					handlePaste();
-				}, 5);
-				break;
-			}
-			case "Delete": {
-				handleRemove();
-				break;
+		} else {
+			switch (event.key) {
+				case "Enter": {
+					window.hide();
+					setTimeout(() => {
+						handlePaste();
+					}, 5);
+					break;
+				}
+				case "Delete": {
+					handleRemove();
+					break;
+				}
 			}
 		}
 	}
