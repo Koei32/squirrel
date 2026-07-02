@@ -23,6 +23,9 @@ jobs:
               run: npm run lint
     backend-lint:
         runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./src-tauri
         steps:
             - uses: actions/checkout@v4
             - uses: dtolnay/rust-toolchain@stable
