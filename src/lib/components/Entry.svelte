@@ -1,6 +1,25 @@
 <script lang="ts">
+	import type { clipboardEvent } from "$lib/types";
 	import { invoke } from "@tauri-apps/api/core";
-	const { cbEvent, active = false, onClick, onDelete, onPin } = $props();
+	const {
+		cbEvent,
+		active = false,
+		onClick,
+		onDelete,
+		onPin,
+	}: {
+		cbEvent: clipboardEvent;
+		active?: boolean;
+		onClick: () => void;
+		onDelete: (id: number) => void;
+		onPin: (id: number) => void;
+	} = $props();
+	import { getCurrentWindow } from "@tauri-apps/api/window";
+
+	const window = getCurrentWindow();
+	export const id = () => {
+		return cbEvent.id;
+	};
 
 	// Whether to show the checkmark or the copy icon
 	let isCopied = $state(false);
@@ -37,7 +56,9 @@
 	export function handlePin() {
 		invoke("pin_entry", { id: cbEvent.id, isPinned });
 		onPin(cbEvent.id);
-		onClick();
+		if (isPinned) {
+			onClick();
+		}
 	}
 
 	/**
@@ -56,12 +77,40 @@
 		invoke("remove_entry", { id: cbEvent.id });
 		onDelete(cbEvent.id);
 	}
+
+	function handleKeyDown(event: KeyboardEvent) {
+		if (event.ctrlKey || event.metaKey) {
+			switch (event.key) {
+				case "c": {
+					handleCopy();
+					break;
+				}
+				case "p": {
+					handlePin();
+					break;
+				}
+			}
+		} else {
+			switch (event.key) {
+				case "Enter": {
+					window.hide();
+					setTimeout(() => {
+						handlePaste();
+					}, 5);
+					break;
+				}
+				case "Delete": {
+					handleRemove();
+					break;
+				}
+			}
+		}
+	}
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="entry-container list-item {isPinned ? 'pinned' : ''}"
+	onkeydown={handleKeyDown}
 	bind:this={element}
 	class:active
 	tabindex="-1"
@@ -165,15 +214,18 @@
 		margin-bottom: 0.2rem;
 	}
 
-	.pinned {
-		border: 2px solid var(--fg-accent);
-	}
-
 	.entry-container:focus {
 		z-index: 9999;
-		background-color: var(--bg-primary);
-		outline: 1px solid var(--fg-accent);
-		/* box-shadow: 0 0 7px var(--fg-accent); */
+		background-color: var(--entry-focus);
+		outline: 1px solid var(--black);
+	}
+
+	.pinned {
+		background-color: var(--entry-pinned);
+	}
+
+	.pinned:focus {
+		background-color: var(--entry-pinned-focus);
 	}
 
 	.content {

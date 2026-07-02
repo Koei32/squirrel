@@ -79,6 +79,10 @@ async fn run_tauri_app() -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    std::env::set_var(
+        "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
+        "--enable-smooth-scrolling",
+    );
     run_tauri_app().await?;
     Ok(())
 }

@@ -5,7 +5,7 @@
 	import { readText } from "@tauri-apps/plugin-clipboard-manager";
 	import { invoke, Channel } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
-	import { onMount } from "svelte";
+	import { onMount, tick } from "svelte";
 	import { register } from "@tauri-apps/plugin-global-shortcut";
 
 	const window = getCurrentWindow();
@@ -14,10 +14,6 @@
 	let cbEvents: Array<clipboardEvent> = $state([]);
 	// Entries that are actually displayed due to current search query
 	let displayedEntries: Array<Entry> = $state([]);
-	// IDs of the entries that are pinned
-	let pinnedIds: Array<number> = $derived(
-		cbEvents.filter((event) => event.is_pinned).map((event) => event.id),
-	);
 
 	let feed: HTMLDivElement | undefined = $state();
 
@@ -52,7 +48,6 @@
 			content: await text,
 			is_pinned: false,
 		});
-		activeEntry?.focusElement();
 	});
 
 	// Channel to stream over history on launch
@@ -72,12 +67,14 @@
 		displayedEntries = [];
 	}
 
-	function setPinned(id: number) {
+	async function setPinned(id: number) {
 		// non-null assertion: setPinned is only called when an Entry of that
 		// id exists.
 		const was = cbEvents.find((event) => event.id == id)!.is_pinned;
 		cbEvents.find((event) => event.id == id)!.is_pinned = !was;
-		feed?.scrollTo(0, 0);
+		await tick();
+		const position = displayedEntries.findIndex((event) => event.id() == id);
+		activeIndex = position;
 	}
 
 	// there's probably a better way to do this
@@ -102,11 +99,19 @@
 		displayedEntries.length = filteredCbEvents.length;
 	});
 
+	$effect(() => {
+		cbEvents;
+		activeIndex;
+		if (document.activeElement !== searchBar) {
+			activeEntry?.focusElement();
+		}
+	});
+
 	/**
 	 * Master keyboard input handler
 	 * @param event
 	 */
-	async function handleKbInput(event: KeyboardEvent) {
+	async function handleNavigation(event: KeyboardEvent) {
 		switch (event.key) {
 			case "Escape": {
 				event.preventDefault();
@@ -117,12 +122,9 @@
 				if (document.activeElement != searchBar) {
 					event.preventDefault();
 					searchBar.focus();
-					break;
 				}
+				break;
 			}
-		}
-
-		switch (event.key) {
 			case "ArrowDown": {
 				event.preventDefault();
 				activeIndex = clamp(activeIndex + 1, 0, displayedEntries.length - 1);
@@ -135,30 +137,8 @@
 				activeEntry?.focusElement();
 				break;
 			}
-			case "c": {
-				if (document.activeElement == searchBar) return;
-				activeEntry?.handleCopy();
-				break;
-			}
-			case "p": {
-				if (document.activeElement == searchBar) return;
-				activeEntry?.handlePin();
-				break;
-			}
-			case "Enter": {
-				window.hide();
-				setTimeout(() => {
-					activeEntry?.handlePaste();
-				}, 50);
-				break;
-			}
-			case "Delete": {
-				if (document.activeElement == searchBar) return;
-				activeEntry?.handleRemove();
-				break;
-			}
-			default: {
-				searchBar.focus();
+			case "ArrowRight": {
+				console.log(activeIndex);
 			}
 		}
 	}
@@ -187,7 +167,6 @@
 
 		// Load clipboard history
 		invoke("load_history", { onEvent });
-		activeEntry?.focusElement();
 
 		// Cleanup handler
 		return () => {
@@ -200,8 +179,7 @@
 	// TODO: split this giant script block into separate files ideally
 </script>
 
-<svelte:window on:keydown={handleKbInput} />
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<svelte:window on:keydown={handleNavigation} />
 <main class="container" data-selectable="true">
 	<div class="subhead">
 		<input
@@ -269,6 +247,10 @@
 		--fg-primary: #0f0f0f;
 		--fg-accent: #999;
 
+		--entry-focus: #d6d6e1;
+		--entry-pinned: #fffcca;
+		--entry-pinned-focus: #dddaaf;
+
 		--black: #000; /* ehh */
 
 		font-family: system-ui;
@@ -282,7 +264,7 @@
 		box-sizing: border-box;
 		margin: 0;
 		margin-top: 0.5rem;
-		height: calc(100vh - 2rem);
+		height: calc(100vh - 2.75rem);
 		display: flex;
 		flex-direction: column;
 		padding: 0rem 0.35rem 0rem 0.65rem;
@@ -360,6 +342,10 @@
 
 			--fg-primary: #dedede;
 			--fg-accent: #828282;
+
+			--entry-focus: #39393d;
+			--entry-pinned: #565439;
+			--entry-pinned-focus: #43432c;
 
 			--black: #fff;
 		}
