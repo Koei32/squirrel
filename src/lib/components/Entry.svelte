@@ -1,10 +1,25 @@
 <script lang="ts">
+	import type { clipboardEvent } from "$lib/types";
 	import { invoke } from "@tauri-apps/api/core";
-	const { cbEvent, active = false, onClick, onDelete, onPin } = $props();
+	const {
+		cbEvent,
+		active = false,
+		onClick,
+		onDelete,
+		onPin,
+	}: {
+		cbEvent: clipboardEvent;
+		active?: boolean;
+		onClick: () => void;
+		onDelete: (id: number) => void;
+		onPin: (id: number) => void;
+	} = $props();
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 
 	const window = getCurrentWindow();
-	export const id = cbEvent.id;
+	export const id = () => {
+		return cbEvent.id;
+	};
 
 	// Whether to show the checkmark or the copy icon
 	let isCopied = $state(false);
@@ -93,8 +108,6 @@
 	}
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	class="entry-container list-item {isPinned ? 'pinned' : ''}"
 	onkeydown={handleKeyDown}

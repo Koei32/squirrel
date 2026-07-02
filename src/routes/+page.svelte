@@ -73,7 +73,7 @@
 		const was = cbEvents.find((event) => event.id == id)!.is_pinned;
 		cbEvents.find((event) => event.id == id)!.is_pinned = !was;
 		await tick();
-		const position = displayedEntries.findIndex((event) => event.id == id);
+		const position = displayedEntries.findIndex((event) => event.id() == id);
 		activeIndex = position;
 	}
 
@@ -180,7 +180,6 @@
 </script>
 
 <svelte:window on:keydown={handleNavigation} />
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <main class="container" data-selectable="true">
 	<div class="subhead">
 		<input
