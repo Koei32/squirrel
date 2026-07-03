@@ -1,4 +1,4 @@
-name: "Squirrel CI"
+name: "PR Lint"
 
 on: pull_request
 
@@ -7,9 +7,6 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - uses: dtolnay/rust-toolchain@stable
-              with:
-                  components: clippy
             - uses: actions/setup-node@v4
               with:
                   node-version: 24
@@ -23,10 +20,17 @@ jobs:
               run: npm run lint
     backend-lint:
         runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./src-tauri
         steps:
             - uses: actions/checkout@v4
             - uses: dtolnay/rust-toolchain@stable
               with:
                   components: clippy
+            - name: Install ubuntu specific deps
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
             - name: Clippy
-              run: cargo clippy ./src-tauri/
+              run: cargo clippy
