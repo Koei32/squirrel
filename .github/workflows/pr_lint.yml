@@ -1,4 +1,4 @@
-name: "Squirrel CI"
+name: "PR Lint"
 
 on: pull_request
 
