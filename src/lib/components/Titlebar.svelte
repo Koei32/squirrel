@@ -2,6 +2,9 @@
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 
 	const window = getCurrentWindow();
+
+	async function handleOptions() {}
+
 	function handleClose() {
 		window.close();
 	}
@@ -39,6 +42,19 @@
 		<p data-tauri-drag-region>Squirrel</p>
 	</div>
 
+	<button id="titlebar-options" title="options" onclick={handleOptions}>
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width="0.8rem"
+			height="0.8rem"
+			viewBox="0 0 24 24"
+			stroke="currentColor"
+			stroke-width="2"
+			><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle
+				cx="12"
+				cy="19"
+				r="1" /></svg>
+	</button>
 	<button id="titlebar-close" title="close" onclick={handleClose}>
 		<svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 24 24">
 			<path
@@ -61,11 +77,13 @@
 		align-items: center;
 		justify-content: center;
 	}
+
 	.logo {
 		height: 1rem;
 		width: 1rem;
 		margin-left: 0.2rem;
 	}
+
 	.head {
 		height: 1rem;
 		width: 100%;
