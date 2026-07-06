@@ -147,6 +147,7 @@
 				if ((event.metaKey || event.ctrlKey) && event.shiftKey) {
 					clearHistory();
 				}
+				break;
 			}
 		}
 	}
