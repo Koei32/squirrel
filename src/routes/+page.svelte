@@ -40,6 +40,8 @@
 			),
 	);
 
+	let noItemText = $state("no items");
+
 	// Main listener of backend events
 	listen<cbEventNotice>("cb-text-copy", async (event) => {
 		const text = readText();
@@ -65,6 +67,10 @@
 		});
 		cbEvents = [];
 		displayedEntries = [];
+		noItemText = "history cleared";
+		setTimeout(() => {
+			noItemText = "no items";
+		}, 2000);
 	}
 
 	async function setPinned(id: number) {
@@ -137,8 +143,10 @@
 				activeEntry?.focusElement();
 				break;
 			}
-			case "ArrowRight": {
-				console.log(activeIndex);
+			case "Delete": {
+				if ((event.metaKey || event.ctrlKey) && event.shiftKey) {
+					clearHistory();
+				}
 			}
 		}
 	}
@@ -232,7 +240,7 @@
 					</g>
 				</svg>
 
-				<span class="no-history-text">no items</span>
+				<span class="no-history-text">{noItemText}</span>
 			</div>
 		{/each}
 	</div>
