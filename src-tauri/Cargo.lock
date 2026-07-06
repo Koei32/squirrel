@@ -3853,7 +3853,6 @@ dependencies = [
  "dirs",
  "enigo",
  "serde",
- "serde_json",
  "sqlx",
  "tauri",
  "tauri-build",
