@@ -60,7 +60,6 @@ async fn run_tauri_app() -> Result<()> {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_prevent_default::init())
