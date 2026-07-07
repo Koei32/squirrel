@@ -7,8 +7,9 @@ mod db;
 
 use anyhow::Result;
 use db::Database;
-use std::fs::create_dir_all;
 use std::sync::atomic::AtomicBool;
+use std::{ffi::OsStr, fs::create_dir_all};
+use sysinfo::{ProcessRefreshKind, RefreshKind};
 use tauri::{
     image::Image,
     menu::{Menu, MenuItem},
@@ -16,7 +17,7 @@ use tauri::{
     Builder, Manager,
 };
 
-async fn run_tauri_app() -> Result<()> {
+async fn run_tauri_app(silent: bool) -> Result<()> {
     let mut db_url = dirs::data_dir().expect("Failed to get data directory");
     db_url.push("Squirrel");
     if !db_url.exists() {
@@ -30,32 +31,41 @@ async fn run_tauri_app() -> Result<()> {
 
     Builder::default()
         .setup(move |app| {
+            let window = app
+                .get_webview_window("main")
+                .expect("Failed to get main webview window");
+
+            if !silent {
+                window.show()?;
+            }
+
+            // Tray icon setup
             let icon_bytes = include_bytes!("../icons/64x64.png");
             let icon = Image::from_bytes(icon_bytes).expect("Failed to parse icon bytes");
-
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show window", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
-
             TrayIconBuilder::new()
                 .menu(&menu)
                 .icon(icon)
                 .build(app)?
-                .on_menu_event(|app, event| match event.id.as_ref() {
+                .on_menu_event(move |app, event| match event.id.as_ref() {
                     "quit" => {
                         app.exit(0);
                     }
                     "show" => {
-                        let _ = app.get_webview_window("main").unwrap().set_focus();
-                        let _ = app.get_webview_window("main").unwrap().show();
+                        let _ = window.set_focus();
+                        let _ = window.show();
                     }
                     _ => {
                         println!("Unhandled menu item: {:?}", event.id);
                     }
                 });
 
+            // State management
             app.manage(db);
             app.manage(skip_event);
+
             clipboard::start_clipboard_listener(app.handle().clone())?;
             Ok(())
         })
@@ -78,10 +88,35 @@ async fn run_tauri_app() -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    if is_dup_instance() {
+        return Ok(());
+    }
+
+    let args: Vec<String> = std::env::args().collect();
+    let silent = if let Some(flag) = args.get(1) {
+        flag == "--silent"
+    } else {
+        false
+    };
+
+    #[cfg(windows)]
     std::env::set_var(
         "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
         "--enable-smooth-scrolling",
     );
-    run_tauri_app().await?;
+
+    run_tauri_app(silent).await?;
     Ok(())
+}
+
+fn is_dup_instance() -> bool {
+    let sysinfo = sysinfo::System::new_with_specifics(
+        RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
+    );
+    for proc in sysinfo.processes_by_name(OsStr::new("squirrel")) {
+        if proc.pid().as_u32() != std::process::id() {
+            return true;
+        }
+    }
+    false
 }
