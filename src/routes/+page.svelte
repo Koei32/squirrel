@@ -53,8 +53,8 @@
 	});
 
 	// Channel to stream over history on launch
-	const onEvent = new Channel<clipboardEvent>();
-	onEvent.onmessage = (event) => {
+	const historyChannel = new Channel<clipboardEvent>();
+	historyChannel.onmessage = (event) => {
 		cbEvents.push(event);
 	};
 
@@ -156,15 +156,6 @@
 		let unlisten: UnlistenFn | undefined;
 
 		const initSetup = async () => {
-			// Register shortcut to show the window
-			await register("CommandOrControl+Shift+V", (event) => {
-				if (event.state == "Pressed") {
-					window.show();
-					window.unminimize();
-					window.setFocus();
-				}
-			});
-
 			// Intercept close event to hide the window instead
 			unlisten = await window.onCloseRequested(async (event) => {
 				event.preventDefault();
@@ -175,7 +166,7 @@
 		initSetup();
 
 		// Load clipboard history
-		invoke("load_history", { onEvent });
+		invoke("load_history", { onEvent: historyChannel });
 
 		// Cleanup handler
 		return () => {

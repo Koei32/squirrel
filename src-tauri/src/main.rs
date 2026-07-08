@@ -16,6 +16,7 @@ use tauri::{
     tray::TrayIconBuilder,
     Builder, Manager,
 };
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 async fn run_tauri_app(silent: bool) -> Result<()> {
     let mut db_url = dirs::data_dir().expect("Failed to get data directory");
@@ -34,6 +35,8 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
             let window = app
                 .get_webview_window("main")
                 .expect("Failed to get main webview window");
+            // we need this to pass into the tray icon builder
+            let window_clone = window.clone();
 
             if !silent {
                 window.show()?;
@@ -54,8 +57,8 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
                         app.exit(0);
                     }
                     "show" => {
-                        let _ = window.set_focus();
-                        let _ = window.show();
+                        let _ = window_clone.set_focus();
+                        let _ = window_clone.show();
                     }
                     _ => {
                         println!("Unhandled menu item: {:?}", event.id);
@@ -66,12 +69,28 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
             app.manage(db);
             app.manage(skip_event);
 
+            // Global launch hotkey
+            let launch_hotkey =
+                Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyV);
+            app.handle().plugin(
+                tauri_plugin_global_shortcut::Builder::new()
+                    .with_handler(move |_app, shortcut, event| {
+                        if shortcut == &launch_hotkey && event.state() == ShortcutState::Pressed {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+                    })
+                    .build(),
+            )?;
+            app.global_shortcut().register(launch_hotkey)?;
+
+            // Start listener
             clipboard::start_clipboard_listener(app.handle().clone())?;
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_prevent_default::init())
         .invoke_handler(tauri::generate_handler![
             commands::clear_history,
@@ -92,13 +111,10 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    let args: Vec<String> = std::env::args().collect();
-    let silent = if let Some(flag) = args.get(1) {
-        flag == "--silent"
-    } else {
-        false
-    };
+    // Whether we want to keep the window hidden at launch
+    let silent: bool = std::env::args().find(|arg| arg == "--silent").is_some();
 
+    // WebView2 experimental smooth scrolling flag, might remove later
     #[cfg(windows)]
     std::env::set_var(
         "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
@@ -109,6 +125,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+/// Returns true if a process named `squirrel` is already running on the system.
 fn is_dup_instance() -> bool {
     let sysinfo = sysinfo::System::new_with_specifics(
         RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
