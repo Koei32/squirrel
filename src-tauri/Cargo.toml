@@ -1,6 +1,6 @@
 [package]
 name = "squirrel"
-version = "0.1.0"
+version = "0.2.0"
 description = "A clipboard manager"
 repository = "https://github.com/Koei32/squirrel"
 authors = ["Koei"]
