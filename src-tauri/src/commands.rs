@@ -15,15 +15,16 @@ pub async fn copy_item(
     skip: State<'_, AtomicBool>,
     id: u32,
 ) -> std::result::Result<(), String> {
-    let entry = db.get_entry(id);
+    let content = db.get_entry_content(id);
     let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
 
     // Skip the next copy event because it's caused by us
     skip.store(true, SeqCst);
 
-    match entry.await.map_err(|e| e.to_string())?.content {
+    match content.await.map_err(|e| e.to_string())? {
         CbEventContent::Text(text) => cb.set_text(text).map_err(|e| e.to_string())?,
-        _ => todo!("images are not handled yet"),
+        CbEventContent::Image(_) => todo!("image support"),
+        CbEventContent::File => todo!("file support"),
     };
     Ok(())
 }

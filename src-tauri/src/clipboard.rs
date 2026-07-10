@@ -50,6 +50,7 @@ impl CbEventType {
 pub enum CbEventContent {
     Text(String),
     Image(String), // base64 encoded
+    File,          // todo
 }
 
 impl CbEventContent {
@@ -57,6 +58,7 @@ impl CbEventContent {
         match self {
             CbEventContent::Text(_) => CbEventType::Text,
             CbEventContent::Image(_) => CbEventType::Image,
+            CbEventContent::File => CbEventType::File,
         }
     }
 }

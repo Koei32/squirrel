@@ -23,6 +23,13 @@ struct ClipboardEntryRow {
     pub is_pinned: bool,
 }
 
+#[derive(sqlx::FromRow)]
+
+struct CbEntryContentRow {
+    pub event_type: CbEventType,
+    pub content: String,
+}
+
 impl From<ClipboardEntryRow> for ClipboardEvent {
     fn from(row: ClipboardEntryRow) -> Self {
         let content = match row.event_type {
@@ -70,6 +77,7 @@ impl Database {
         Ok(entry.into())
     }
 
+    #[allow(dead_code)]
     /// Gets a clipboard entry by its id
     pub async fn get_entry(&self, id: u32) -> Result<ClipboardEvent> {
         let entry: ClipboardEntryRow = sqlx::query_as("SELECT * FROM clipboard WHERE id = ?;")
@@ -77,6 +85,23 @@ impl Database {
             .fetch_one(&self.pool)
             .await?;
         Ok(entry.into())
+    }
+
+    pub async fn get_entry_content(&self, id: u32) -> Result<CbEventContent> {
+        let row: CbEntryContentRow =
+            sqlx::query_as("SELECT event_type, content FROM clipboard WHERE id = ?;")
+                .bind(id)
+                .fetch_one(&self.pool)
+                .await
+                .unwrap();
+
+        let content: CbEventContent = match row.event_type {
+            CbEventType::Text => CbEventContent::Text(row.content),
+            CbEventType::Image => todo!("image support"),
+            CbEventType::File => todo!("file support"),
+        };
+
+        Ok(content)
     }
 
     /// Removes an entry from the database by its id
