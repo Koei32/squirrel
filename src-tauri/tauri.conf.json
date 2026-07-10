@@ -15,6 +15,7 @@
 				"title": "Squirrel",
 				"width": 400,
 				"minWidth": 200,
+				"visible": false,
 				"height": 500,
 				"minHeight": 300,
 				"center": true,

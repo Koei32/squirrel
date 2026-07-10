@@ -7,16 +7,18 @@ mod db;
 
 use anyhow::Result;
 use db::Database;
-use std::fs::create_dir_all;
 use std::sync::atomic::AtomicBool;
+use std::{ffi::OsStr, fs::create_dir_all};
+use sysinfo::{ProcessRefreshKind, RefreshKind};
 use tauri::{
     image::Image,
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
     Builder, Manager,
 };
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
-async fn run_tauri_app() -> Result<()> {
+async fn run_tauri_app(silent: bool) -> Result<()> {
     let mut db_url = dirs::data_dir().expect("Failed to get data directory");
     db_url.push("Squirrel");
     if !db_url.exists() {
@@ -30,39 +32,65 @@ async fn run_tauri_app() -> Result<()> {
 
     Builder::default()
         .setup(move |app| {
+            let window = app
+                .get_webview_window("main")
+                .expect("Failed to get main webview window");
+            // we need this to pass into the tray icon builder
+            let window_clone = window.clone();
+
+            if !silent {
+                window.show()?;
+            }
+
+            // Tray icon setup
             let icon_bytes = include_bytes!("../icons/64x64.png");
             let icon = Image::from_bytes(icon_bytes).expect("Failed to parse icon bytes");
-
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show window", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
-
             TrayIconBuilder::new()
                 .menu(&menu)
                 .icon(icon)
                 .build(app)?
-                .on_menu_event(|app, event| match event.id.as_ref() {
+                .on_menu_event(move |app, event| match event.id.as_ref() {
                     "quit" => {
                         app.exit(0);
                     }
                     "show" => {
-                        let _ = app.get_webview_window("main").unwrap().set_focus();
-                        let _ = app.get_webview_window("main").unwrap().show();
+                        let _ = window_clone.set_focus();
+                        let _ = window_clone.show();
                     }
                     _ => {
                         println!("Unhandled menu item: {:?}", event.id);
                     }
                 });
 
+            // State management
             app.manage(db);
             app.manage(skip_event);
+
+            // Global launch hotkey
+            let launch_hotkey =
+                Shortcut::new(Some(Modifiers::CONTROL | Modifiers::SHIFT), Code::KeyV);
+            app.handle().plugin(
+                tauri_plugin_global_shortcut::Builder::new()
+                    .with_handler(move |_app, shortcut, event| {
+                        if shortcut == &launch_hotkey && event.state() == ShortcutState::Pressed {
+                            let _ = window.show();
+                            let _ = window.unminimize();
+                            let _ = window.set_focus();
+                        }
+                    })
+                    .build(),
+            )?;
+            app.global_shortcut().register(launch_hotkey)?;
+
+            // Start listener
             clipboard::start_clipboard_listener(app.handle().clone())?;
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .plugin(tauri_plugin_prevent_default::init())
         .invoke_handler(tauri::generate_handler![
             commands::clear_history,
@@ -79,10 +107,33 @@ async fn run_tauri_app() -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    if is_dup_instance() {
+        return Ok(());
+    }
+
+    // Whether we want to keep the window hidden at launch
+    let silent: bool = std::env::args().find(|arg| arg == "--silent").is_some();
+
+    // WebView2 experimental smooth scrolling flag, might remove later
+    #[cfg(windows)]
     std::env::set_var(
         "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
         "--enable-smooth-scrolling",
     );
-    run_tauri_app().await?;
+
+    run_tauri_app(silent).await?;
     Ok(())
+}
+
+/// Returns true if a process named `squirrel` is already running on the system.
+fn is_dup_instance() -> bool {
+    let sysinfo = sysinfo::System::new_with_specifics(
+        RefreshKind::nothing().with_processes(ProcessRefreshKind::everything()),
+    );
+    for proc in sysinfo.processes_by_name(OsStr::new("squirrel")) {
+        if proc.pid().as_u32() != std::process::id() {
+            return true;
+        }
+    }
+    false
 }

@@ -40,6 +40,8 @@
 			),
 	);
 
+	let noItemText = $state("no items");
+
 	// Main listener of backend events
 	listen<cbEventNotice>("cb-text-copy", async (event) => {
 		const text = readText();
@@ -51,8 +53,8 @@
 	});
 
 	// Channel to stream over history on launch
-	const onEvent = new Channel<clipboardEvent>();
-	onEvent.onmessage = (event) => {
+	const historyChannel = new Channel<clipboardEvent>();
+	historyChannel.onmessage = (event) => {
 		cbEvents.push(event);
 	};
 
@@ -65,6 +67,10 @@
 		});
 		cbEvents = [];
 		displayedEntries = [];
+		noItemText = "history cleared";
+		setTimeout(() => {
+			noItemText = "no items";
+		}, 2000);
 	}
 
 	async function setPinned(id: number) {
@@ -137,8 +143,11 @@
 				activeEntry?.focusElement();
 				break;
 			}
-			case "ArrowRight": {
-				console.log(activeIndex);
+			case "Delete": {
+				if ((event.metaKey || event.ctrlKey) && event.shiftKey) {
+					clearHistory();
+				}
+				break;
 			}
 		}
 	}
@@ -147,15 +156,6 @@
 		let unlisten: UnlistenFn | undefined;
 
 		const initSetup = async () => {
-			// Register shortcut to show the window
-			await register("CommandOrControl+Shift+V", (event) => {
-				if (event.state == "Pressed") {
-					window.show();
-					window.unminimize();
-					window.setFocus();
-				}
-			});
-
 			// Intercept close event to hide the window instead
 			unlisten = await window.onCloseRequested(async (event) => {
 				event.preventDefault();
@@ -166,7 +166,7 @@
 		initSetup();
 
 		// Load clipboard history
-		invoke("load_history", { onEvent });
+		invoke("load_history", { onEvent: historyChannel });
 
 		// Cleanup handler
 		return () => {
@@ -232,7 +232,7 @@
 					</g>
 				</svg>
 
-				<span class="no-history-text">no items</span>
+				<span class="no-history-text">{noItemText}</span>
 			</div>
 		{/each}
 	</div>
