@@ -1,6 +1,5 @@
 //! database and things like that
-
-use crate::clipboard::{CbEventContent, CbEventType, ClipboardEvent};
+use crate::clipboard::models::{CbEventContent, CbEventType, ClipboardEvent};
 use anyhow::Result;
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
@@ -24,7 +23,6 @@ struct ClipboardEntryRow {
 }
 
 #[derive(sqlx::FromRow)]
-
 struct CbEntryContentRow {
     pub event_type: CbEventType,
     pub content: String,

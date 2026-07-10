@@ -1,4 +1,4 @@
-use crate::clipboard::{CbEventContent, ClipboardEvent};
+use crate::clipboard::models::{CbEventContent, ClipboardEvent};
 use crate::db::Database;
 use clipboard_rs::{Clipboard, ClipboardContext};
 use enigo::{Direction, Enigo, Key, Keyboard, Settings};
