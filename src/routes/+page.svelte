@@ -28,14 +28,15 @@
 		cbEvents
 			.filter(
 				(event) =>
-					event.content.toLowerCase().includes(searchQuery.trim().toLowerCase()) &&
+					event.content.data.toLowerCase().includes(searchQuery.trim().toLowerCase()) &&
 					event.is_pinned,
 			)
 			.concat(
 				cbEvents.filter(
 					(event) =>
-						event.content.toLowerCase().includes(searchQuery.trim().toLowerCase()) &&
-						!event.is_pinned,
+						event.content.data
+							.toLowerCase()
+							.includes(searchQuery.trim().toLowerCase()) && !event.is_pinned,
 				),
 			),
 	);
@@ -47,7 +48,7 @@
 		const text = readText();
 		cbEvents.unshift({
 			...event.payload,
-			content: await text,
+			content: { type: "text", data: await text },
 			is_pinned: false,
 		});
 	});

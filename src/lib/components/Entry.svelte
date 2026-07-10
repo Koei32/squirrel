@@ -119,7 +119,7 @@
 	aria-selected={active}>
 	<div class="content">
 		<p data-selectable="true">
-			{cbEvent.content}
+			{cbEvent.content.data}
 		</p>
 	</div>
 	<div class="footer">

@@ -1,4 +1,4 @@
-use crate::clipboard::ClipboardEvent;
+use crate::clipboard::{CbEventContent, ClipboardEvent};
 use crate::db::Database;
 use clipboard_rs::{Clipboard, ClipboardContext};
 use enigo::{Direction, Enigo, Key, Keyboard, Settings};
@@ -13,16 +13,18 @@ use tauri::{ipc::Channel, State};
 pub async fn copy_item(
     db: State<'_, Database>,
     skip: State<'_, AtomicBool>,
-    id: u16,
+    id: u32,
 ) -> std::result::Result<(), String> {
-    let content = db.get_entry(id);
+    let entry = db.get_entry(id);
     let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
 
     // Skip the next copy event because it's caused by us
     skip.store(true, SeqCst);
-    cb.set_text(content.await.map_err(|e| e.to_string())?.content)
-        .map_err(|e| e.to_string())?;
 
+    match entry.await.map_err(|e| e.to_string())?.content {
+        CbEventContent::Text(text) => cb.set_text(text).map_err(|e| e.to_string())?,
+        _ => todo!("images are not handled yet"),
+    };
     Ok(())
 }
 
@@ -32,7 +34,7 @@ pub async fn copy_item(
 pub async fn paste_item(
     db: State<'_, Database>,
     skip: State<'_, AtomicBool>,
-    id: u16,
+    id: u32,
 ) -> std::result::Result<(), String> {
     copy_item(db, skip, id).await?;
     let mut keyboard = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
@@ -63,7 +65,7 @@ pub async fn paste_item(
 #[tauri::command(async)]
 pub async fn pin_entry(
     db: State<'_, Database>,
-    id: u16,
+    id: u32,
     is_pinned: bool,
 ) -> std::result::Result<(), String> {
     db.set_pinned(id, is_pinned)
@@ -74,7 +76,7 @@ pub async fn pin_entry(
 
 /// Removes the entry associated with the given id.
 #[tauri::command(async)]
-pub async fn remove_entry(db: State<'_, Database>, id: u16) -> std::result::Result<(), String> {
+pub async fn remove_entry(db: State<'_, Database>, id: u32) -> std::result::Result<(), String> {
     db.remove_entry(id).await.map_err(|e| e.to_string())?;
     Ok(())
 }
