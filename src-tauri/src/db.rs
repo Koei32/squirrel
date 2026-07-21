@@ -91,8 +91,7 @@ impl Database {
             sqlx::query_as("SELECT event_type, content FROM clipboard WHERE id = ?;")
                 .bind(id)
                 .fetch_one(&self.pool)
-                .await
-                .unwrap();
+                .await?;
 
         let content: CbEventContent = match row.event_type {
             CbEventType::Text => CbEventContent::Text(row.content),

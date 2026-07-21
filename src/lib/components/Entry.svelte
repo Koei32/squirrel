@@ -35,13 +35,16 @@
 	// Lazy loading for image data
 	$effect(() => {
 		if (cbEvent.event_type !== "image" || !contentWrapperElement) return;
-
+		// the delay is to wait for the content to be written to database before
+		// requesting it.
 		const observer = new IntersectionObserver(async ([e]) => {
-			if (e.isIntersecting && !imageData) {
-				console.log("intersected!");
-				imageData = await invoke("get_entry_content", { id: cbEvent.id });
-				observer.disconnect();
-			}
+			setTimeout(async () => {
+				if (e.isIntersecting && !imageData) {
+					console.log("intersected!");
+					imageData = await invoke("get_entry_content", { id: cbEvent.id });
+					observer.disconnect();
+				}
+			}, 200);
 		});
 
 		observer.observe(contentWrapperElement);
