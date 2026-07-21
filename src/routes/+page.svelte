@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 	import Entry from "../lib/components/Entry.svelte";
-	import { cbEventType, type cbEventNotice, type clipboardEvent } from "../lib/types";
-	import { readText, readImage } from "@tauri-apps/plugin-clipboard-manager";
+	import { type cbEventNotice, type clipboardEvent } from "../lib/types";
 	import { invoke, Channel } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 	import { onMount, tick } from "svelte";
@@ -56,9 +55,6 @@
 	listen<cbEventNotice>("cb-copy", async (event) => {
 		switch (event.payload.event_type) {
 			case "text": {
-				// TODO: maybe just get from the backend instead of relying on tauri
-				// clipboard manager plugin
-				// const text = readText();
 				cbEvents.unshift({
 					...event.payload,
 					content: { type: "Text", data: undefined },
