@@ -25,11 +25,11 @@ impl From<CbEventType> for String {
 }
 
 impl CbEventType {
-    pub fn as_str(&self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
-            CbEventType::Text => "text",
-            CbEventType::Image => "image",
-            CbEventType::File => "file",
+            Self::Text => "text",
+            Self::Image => "image",
+            Self::File => "file",
         }
     }
 }
@@ -43,11 +43,11 @@ pub enum CbEventContent {
 }
 
 impl CbEventContent {
-    pub fn to_type(&self) -> CbEventType {
+    pub const fn to_type(&self) -> CbEventType {
         match self {
-            CbEventContent::Text(_) => CbEventType::Text,
-            CbEventContent::Image(_) => CbEventType::Image,
-            CbEventContent::File => CbEventType::File,
+            Self::Text(_) => CbEventType::Text,
+            Self::Image(_) => CbEventType::Image,
+            Self::File => CbEventType::File,
         }
     }
 }
@@ -81,7 +81,7 @@ pub struct ClipboardEventNotice {
 
 impl From<&ClipboardEvent> for ClipboardEventNotice {
     fn from(value: &ClipboardEvent) -> Self {
-        ClipboardEventNotice {
+        Self {
             id: value.id,
             event_type: value.event_type,
             timestamp: value.timestamp.clone(),
@@ -102,7 +102,7 @@ pub struct ClipboardListener {
 impl ClipboardListener {
     pub fn new(tx: mpsc::UnboundedSender<CbEventContent>, app: AppHandle) -> Self {
         let ctx = ClipboardContext::new().expect("Failed to create clipboard context.");
-        ClipboardListener {
+        Self {
             ctx,
             tx,
             last_hash: None,

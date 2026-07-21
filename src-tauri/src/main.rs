@@ -1,6 +1,7 @@
+#![warn(clippy::all, clippy::nursery, clippy::cargo)]
+#![allow(clippy::multiple_crate_versions)]
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 mod clipboard;
 mod commands;
 mod db;
@@ -121,7 +122,7 @@ async fn main() -> Result<()> {
     }
 
     // Whether we want to keep the window hidden at launch
-    let silent: bool = std::env::args().find(|arg| arg == "--silent").is_some();
+    let silent: bool = std::env::args().any(|arg| &arg == "--silent");
 
     // WebView2 experimental smooth scrolling flag, might remove later
     #[cfg(windows)]

@@ -28,15 +28,16 @@ struct CbEntryContentRow {
     pub content: String,
 }
 
+#[allow(clippy::fallible_impl_from)] // files are todo
 impl From<ClipboardEntryRow> for ClipboardEvent {
     fn from(row: ClipboardEntryRow) -> Self {
         let content = match row.event_type {
             CbEventType::Text => CbEventContent::Text(row.content.unwrap()),
-            CbEventType::Image => CbEventContent::Image(row.content.unwrap_or("".to_string())),
+            CbEventType::Image => CbEventContent::Image(row.content.unwrap_or_default()),
             CbEventType::File => todo!("file"),
         };
 
-        ClipboardEvent {
+        Self {
             id: row.id,
             event_type: row.event_type,
             is_pinned: row.is_pinned,
@@ -76,6 +77,7 @@ impl Database {
     }
 
     /// Gets a clipboard entry by its id
+    #[allow(dead_code)]
     pub async fn get_entry(&self, id: u32) -> Result<ClipboardEvent> {
         let entry: ClipboardEntryRow = sqlx::query_as("SELECT * FROM clipboard WHERE id = ?;")
             .bind(id)

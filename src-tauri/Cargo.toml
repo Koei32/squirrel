@@ -2,7 +2,13 @@
 name = "squirrel"
 version = "0.2.0"
 description = "A clipboard manager"
+keywords = ["clipboard manager"]
+# i really dont know if Squirrel falls into any category 
+# listed at https://crates.io/category_slugs
+categories = ["accessibility"] 
 repository = "https://github.com/Koei32/squirrel"
+readme = "../../README.md"
+license = "GPL-3.0-or-later"
 authors = ["Koei"]
 edition = "2021"
 
