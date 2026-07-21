@@ -105,27 +105,14 @@ pub async fn set_event_channel(
     Ok(())
 }
 
-/// Returns the content of the entry associated with the given id over the
-/// provided channel
+/// Returns the content of the entry associated with the given id
 #[tauri::command(async)]
 pub async fn get_entry_content(
     db: State<'_, Database>,
     id: u32,
-    on_event: Channel<String>,
-) -> std::result::Result<(), String> {
+) -> std::result::Result<String, String> {
     let content = db.get_entry_content(id).await.map_err(|e| e.to_string())?;
-    match content {
-        CbEventContent::Text(text) => {
-            let _ = on_event.send(text);
-        }
-        CbEventContent::Image(b64data) => {
-            let _ = on_event.send(b64data);
-        }
-        CbEventContent::File => {
-            todo!()
-        }
-    }
-    Ok(())
+    Ok(content.into())
 }
 
 /// Sends the stored clipboard history over the provided channel, most recent

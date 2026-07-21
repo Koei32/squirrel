@@ -111,7 +111,7 @@ impl Database {
     }
 
     /// Gets all clipboard entries from the database, most recent entries first.
-    /// Does NOT get the content for image entries, use [`Database::get_entry_content`]
+    /// Does NOT get the content for image entries, use [`Database::get_entry_content`].
     pub async fn get_entries(&self) -> Result<Vec<ClipboardEvent>> {
         let results: Vec<ClipboardEntryRow> = sqlx::query_as(
             "

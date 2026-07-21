@@ -27,6 +27,26 @@
 	let isPinned = $derived(cbEvent.is_pinned);
 	// This element
 	let element: HTMLElement | null = $state(null);
+	// Wrapper around this entry's content
+	let contentWrapperElement: HTMLDivElement | null = $state(null);
+	// If the entry is of the image type
+	let imageData: string | null = $state(null);
+
+	// Lazy loading for image data
+	$effect(() => {
+		if (cbEvent.event_type !== "image" || !contentWrapperElement) return;
+
+		const observer = new IntersectionObserver(async ([e]) => {
+			if (e.isIntersecting && !imageData) {
+				console.log("intersected!");
+				imageData = await invoke("get_entry_content", { id: cbEvent.id });
+				observer.disconnect();
+			}
+		});
+
+		observer.observe(contentWrapperElement);
+		return () => observer.disconnect();
+	});
 
 	/**
 	 * Focuses this element
@@ -117,20 +137,24 @@
 	role="option"
 	onclick={onClick}
 	aria-selected={active}>
-	<div class="content">
-		{#if !cbEvent.content.data}
-			<span class="content-loading-text">loading content...</span>
-		{:else}
-			{#if cbEvent.content.type == "Image"}
-				<img
-					style="max-width: 100%; max-height: 8rem"
-					src={`data:image/png;base64,${cbEvent.content.data}`}
-					alt="clipboard" />
+	<div class="content" bind:this={contentWrapperElement}>
+		{#if cbEvent.content.type == "Text"}
+			{#if cbEvent.content.data}
+				<p data-selectable="true">{cbEvent.content.data}</p>
 			{:else}
-				<p data-selectable="true">
-					{cbEvent.content.data}
-				</p>
+				<span class="content-loading-text">loading content...</span>
 			{/if}
+		{:else if cbEvent.content.type == "Image"}
+			<div bind:this={contentWrapperElement} style="min-height: 2rem">
+				{#if imageData}
+					<img
+						style="max-width: 100%; max-height: 8rem"
+						src={`data:image/png;base64,${imageData}`}
+						alt="clipboard" />
+				{:else}
+					<span class="content-loading-text">loading image...</span>
+				{/if}
+			</div>
 		{/if}
 	</div>
 	<div class="footer">
