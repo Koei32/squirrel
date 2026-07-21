@@ -6,10 +6,11 @@ use anyhow::Result;
 use base64::Engine;
 use chrono::Local;
 use clipboard_rs::{
-    common::RustImage, Clipboard, ClipboardHandler, ClipboardWatcher, ClipboardWatcherContext,
-    ContentFormat,
+    common::RustImage, Clipboard, ClipboardContext, ClipboardHandler, ClipboardWatcher,
+    ClipboardWatcherContext, ContentFormat,
 };
 use models::*;
+use std::hash::{DefaultHasher, Hash, Hasher};
 use std::sync::{
     atomic::{AtomicBool, Ordering::SeqCst},
     Mutex,
@@ -33,35 +34,49 @@ impl ClipboardHandler for ClipboardListener {
                 }
 
                 // Reject consecutive duplicate copies
-                let hash = self.calculate_hash(&text);
-                if hash == self.last_hash.unwrap_or_default() {
+                let hash = calculate_hash(&text);
+                let mut last = self.last_hash.lock().unwrap();
+                if Some(hash) == *last {
                     return;
                 }
-                self.last_hash = Some(hash);
+                *last = Some(hash);
+                drop(last);
 
                 let _ = self.tx.send(CbEventContent::Text(text));
             }
         } else if self.ctx.has(ContentFormat::Image) {
-            if let Ok(image) = self.ctx.get_image() {
-                let img = image.to_png().expect("Failed to convert image data to png");
-                let img_bytes = img.get_bytes();
+            let tx = self.tx.clone();
+            let last_hash = self.last_hash.clone();
 
-                // Arbitrary 5mb limit
-                if img_bytes.len() > 5_000_000 {
-                    return;
+            tauri::async_runtime::spawn(async move {
+                let result = tokio::task::spawn_blocking(move || -> Option<String> {
+                    let ctx = ClipboardContext::new().ok()?;
+                    let img = ctx.get_image().ok()?;
+                    let png = img.to_png().ok()?;
+                    let img_bytes = png.get_bytes();
+
+                    if img_bytes.len() > 5_000_000 {
+                        return None;
+                    }
+
+                    let hash = calculate_hash(&img_bytes);
+
+                    let mut last = last_hash.lock().unwrap();
+                    if Some(hash) == *last {
+                        return None;
+                    }
+                    *last = Some(hash);
+                    drop(last);
+
+                    let b64 = base64::engine::general_purpose::STANDARD.encode(img_bytes);
+                    Some(b64)
+                })
+                .await;
+
+                if let Ok(Some(b64)) = result {
+                    let _ = tx.send(CbEventContent::Image(b64));
                 }
-
-                // Reject consecutive duplicate copies
-                let hash = self.calculate_hash(&img_bytes);
-                if hash == self.last_hash.unwrap_or_default() {
-                    return;
-                }
-                self.last_hash = Some(hash);
-
-                let img_b64 = base64::engine::general_purpose::STANDARD.encode(img_bytes);
-
-                let _ = self.tx.send(CbEventContent::Image(img_b64));
-            }
+            });
         }
     }
 }
@@ -102,4 +117,11 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
         lock.as_mut().unwrap().send(event)?;
     }
     Ok(())
+}
+
+/// Returns the hash of the given value
+pub fn calculate_hash<T: Hash>(value: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    value.hash(&mut s);
+    s.finish()
 }

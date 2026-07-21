@@ -1,7 +1,7 @@
 use clipboard_rs::ClipboardContext;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
-use std::hash::{DefaultHasher, Hash, Hasher};
+use std::sync::{Arc, Mutex};
 use tauri::AppHandle;
 use tokio::sync::mpsc::{self};
 
@@ -94,7 +94,7 @@ pub struct ClipboardListener {
     /// Sender of [`CbEventContent`]s
     pub tx: mpsc::UnboundedSender<CbEventContent>,
     /// Content hash of the last event (used to avoid consecutive duplicates)
-    pub last_hash: Option<u64>,
+    pub last_hash: Arc<Mutex<Option<u64>>>,
     /// App handle
     pub app: AppHandle,
 }
@@ -105,15 +105,8 @@ impl ClipboardListener {
         Self {
             ctx,
             tx,
-            last_hash: None,
+            last_hash: Arc::new(Mutex::new(None)),
             app,
         }
-    }
-
-    /// Returns the hash of the given value
-    pub fn calculate_hash<T: Hash>(&self, value: &T) -> u64 {
-        let mut s = DefaultHasher::new();
-        value.hash(&mut s);
-        s.finish()
     }
 }
