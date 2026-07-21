@@ -5,9 +5,9 @@ export enum cbEventType {
 }
 
 export type cbEventContent =
-	| { type: "text"; data: string }
-	| { type: "image"; data: string } // base64 encoded
-	| { type: "file"; data: string }; // TODO
+	| { type: "Text"; data: string | undefined }
+	| { type: "Image"; data: Uint8Array<ArrayBufferLike> | undefined } // base64 encoded
+	| { type: "File"; data: string | undefined }; // TODO
 
 export type clipboardEvent = {
 	id: number;

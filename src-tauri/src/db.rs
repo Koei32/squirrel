@@ -17,7 +17,7 @@ struct ClipboardEntryRow {
     pub id: u32,
     pub event_type: CbEventType,
     /// Either text for text or base64 for images
-    pub content: String,
+    pub content: Option<String>,
     pub timestamp: String,
     pub is_pinned: bool,
 }
@@ -31,8 +31,8 @@ struct CbEntryContentRow {
 impl From<ClipboardEntryRow> for ClipboardEvent {
     fn from(row: ClipboardEntryRow) -> Self {
         let content = match row.event_type {
-            CbEventType::Text => CbEventContent::Text(row.content),
-            CbEventType::Image => todo!("image"),
+            CbEventType::Text => CbEventContent::Text(row.content.unwrap()),
+            CbEventType::Image => CbEventContent::Image(row.content.unwrap_or("".to_string())),
             CbEventType::File => todo!("file"),
         };
 
@@ -75,7 +75,6 @@ impl Database {
         Ok(entry.into())
     }
 
-    #[allow(dead_code)]
     /// Gets a clipboard entry by its id
     pub async fn get_entry(&self, id: u32) -> Result<ClipboardEvent> {
         let entry: ClipboardEntryRow = sqlx::query_as("SELECT * FROM clipboard WHERE id = ?;")
@@ -95,7 +94,7 @@ impl Database {
 
         let content: CbEventContent = match row.event_type {
             CbEventType::Text => CbEventContent::Text(row.content),
-            CbEventType::Image => todo!("image support"),
+            CbEventType::Image => CbEventContent::Image(row.content),
             CbEventType::File => todo!("file support"),
         };
 
@@ -112,11 +111,22 @@ impl Database {
     }
 
     /// Gets all clipboard entries from the database, most recent entries first.
+    /// Does NOT get the content for image entries, use [`Database::get_entry_content`]
     pub async fn get_entries(&self) -> Result<Vec<ClipboardEvent>> {
-        let results: Vec<ClipboardEntryRow> =
-            sqlx::query_as("SELECT * FROM clipboard ORDER BY id DESC;")
-                .fetch_all(&self.pool)
-                .await?;
+        let results: Vec<ClipboardEntryRow> = sqlx::query_as(
+            "
+            SELECT 
+                id, 
+                event_type, 
+                CASE WHEN event_type = 'text' THEN content ELSE NULL END as content,
+                timestamp,
+                is_pinned
+                FROM clipboard 
+                ORDER BY id DESC;
+            ",
+        )
+        .fetch_all(&self.pool)
+        .await?;
         let results = results.into_iter().map(|x| x.into()).collect();
         Ok(results)
     }

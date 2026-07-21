@@ -3,13 +3,18 @@
 pub mod models;
 use crate::db::Database;
 use anyhow::Result;
+use base64::Engine;
 use chrono::Local;
 use clipboard_rs::{
-    Clipboard, ClipboardHandler, ClipboardWatcher, ClipboardWatcherContext, ContentFormat,
+    common::RustImage, Clipboard, ClipboardHandler, ClipboardWatcher, ClipboardWatcherContext,
+    ContentFormat,
 };
 use models::*;
-use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
-use tauri::{AppHandle, Emitter, Manager};
+use std::sync::{
+    atomic::{AtomicBool, Ordering::SeqCst},
+    Mutex,
+};
+use tauri::{ipc::Channel, AppHandle, Emitter, Manager};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 
 impl ClipboardHandler for ClipboardListener {
@@ -28,15 +33,35 @@ impl ClipboardHandler for ClipboardListener {
                 }
 
                 // Reject consecutive duplicate copies
-                if self.calculate_hash(&text) == self.last_hash.unwrap_or_default() {
+                let hash = self.calculate_hash(&text);
+                if hash == self.last_hash.unwrap_or_default() {
                     return;
                 }
+                self.last_hash = Some(hash);
 
-                self.last_hash = Some(self.calculate_hash(&text));
                 let _ = self.tx.send(CbEventContent::Text(text));
             }
         } else if self.ctx.has(ContentFormat::Image) {
-            todo!("images are not handled yet");
+            if let Ok(image) = self.ctx.get_image() {
+                let img = image.to_png().expect("Failed to convert image data to png");
+                let img_bytes = img.get_bytes();
+
+                // Arbitrary 5mb limit
+                if img_bytes.len() > 5_000_000 {
+                    return;
+                }
+
+                // Reject consecutive duplicate copies
+                let hash = self.calculate_hash(&img_bytes);
+                if hash == self.last_hash.unwrap_or_default() {
+                    return;
+                }
+                self.last_hash = Some(hash);
+
+                let img_b64 = base64::engine::general_purpose::STANDARD.encode(img_bytes);
+
+                let _ = self.tx.send(CbEventContent::Image(img_b64));
+            }
         }
     }
 }
@@ -67,8 +92,14 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
             timestamp: Local::now().to_rfc3339(),
             is_pinned: false,
         };
+        // Notify the about the event frontend first
+        let _ = app.emit("cb-copy", ClipboardEventNotice::from(&event));
         let event = db.create_entry(event).await?;
-        let _ = app.emit("cb-text-copy", ClipboardEventNotice::from(event.clone()));
+
+        // Then send the content after writing it to db
+        let channel = app.state::<Mutex<Option<Channel<ClipboardEvent>>>>();
+        let mut lock = channel.lock().unwrap();
+        lock.as_mut().unwrap().send(event)?;
     }
     Ok(())
 }

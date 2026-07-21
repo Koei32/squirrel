@@ -56,7 +56,8 @@ impl From<CbEventContent> for String {
     fn from(value: CbEventContent) -> Self {
         match value {
             CbEventContent::Text(x) => x,
-            _ => "".to_string(),
+            CbEventContent::Image(b64) => b64,
+            CbEventContent::File => todo!(),
         }
     }
 }
@@ -78,19 +79,19 @@ pub struct ClipboardEventNotice {
     pub timestamp: String,
 }
 
-impl From<ClipboardEvent> for ClipboardEventNotice {
-    fn from(value: ClipboardEvent) -> Self {
+impl From<&ClipboardEvent> for ClipboardEventNotice {
+    fn from(value: &ClipboardEvent) -> Self {
         ClipboardEventNotice {
             id: value.id,
             event_type: value.event_type,
-            timestamp: value.timestamp,
+            timestamp: value.timestamp.clone(),
         }
     }
 }
 
 pub struct ClipboardListener {
     pub ctx: ClipboardContext,
-    /// Sender of [`ClipboardEvent`]s
+    /// Sender of [`CbEventContent`]s
     pub tx: mpsc::UnboundedSender<CbEventContent>,
     /// Content hash of the last event (used to avoid consecutive duplicates)
     pub last_hash: Option<u64>,

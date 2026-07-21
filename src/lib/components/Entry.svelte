@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { clipboardEvent } from "$lib/types";
+	import type { cbEventType, clipboardEvent } from "$lib/types";
 	import { invoke } from "@tauri-apps/api/core";
 	const {
 		cbEvent,
@@ -118,9 +118,20 @@
 	onclick={onClick}
 	aria-selected={active}>
 	<div class="content">
-		<p data-selectable="true">
-			{cbEvent.content.data}
-		</p>
+		{#if !cbEvent.content.data}
+			<span class="content-loading-text">loading content...</span>
+		{:else}
+			{#if cbEvent.content.type == "Image"}
+				<img
+					style="max-width: 100%; max-height: 8rem"
+					src={`data:image/png;base64,${cbEvent.content.data}`}
+					alt="clipboard" />
+			{:else}
+				<p data-selectable="true">
+					{cbEvent.content.data}
+				</p>
+			{/if}
+		{/if}
 	</div>
 	<div class="footer">
 		<span class="time">{new Date(cbEvent.timestamp).toLocaleString()}</span>
@@ -234,6 +245,11 @@
 		min-width: 0;
 		width: 100%;
 		flex-grow: 1;
+	}
+
+	.content-loading-text {
+		font-size: 0.75rem;
+		color: var(--bg-accent);
 	}
 
 	.footer {

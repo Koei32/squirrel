@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 	import Entry from "../lib/components/Entry.svelte";
-	import type { cbEventNotice, clipboardEvent } from "../lib/types";
-	import { readText } from "@tauri-apps/plugin-clipboard-manager";
+	import { cbEventType, type cbEventNotice, type clipboardEvent } from "../lib/types";
+	import { readText, readImage } from "@tauri-apps/plugin-clipboard-manager";
 	import { invoke, Channel } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 	import { onMount, tick } from "svelte";
-	import { register } from "@tauri-apps/plugin-global-shortcut";
 
 	const window = getCurrentWindow();
 
@@ -26,31 +25,56 @@
 	let searchQuery = $state("");
 	let filteredCbEvents: Array<clipboardEvent> = $derived(
 		cbEvents
-			.filter(
-				(event) =>
-					event.content.data.toLowerCase().includes(searchQuery.trim().toLowerCase()) &&
-					event.is_pinned,
-			)
+			.filter((event) => {
+				if (!searchQuery.trim().toLowerCase()) {
+					return event.is_pinned;
+				}
+				if (event.content.type == "Image") return false;
+
+				return event.content.data?.toLowerCase().includes(searchQuery.trim().toLowerCase());
+			})
 			.concat(
-				cbEvents.filter(
-					(event) =>
-						event.content.data
-							.toLowerCase()
-							.includes(searchQuery.trim().toLowerCase()) && !event.is_pinned,
-				),
+				cbEvents.filter((event) => {
+					if (!searchQuery.trim().toLowerCase()) {
+						return !event.is_pinned;
+					}
+				}),
 			),
 	);
 
 	let noItemText = $state("no items");
 
-	// Main listener of backend events
-	listen<cbEventNotice>("cb-text-copy", async (event) => {
-		const text = readText();
-		cbEvents.unshift({
-			...event.payload,
-			content: { type: "text", data: await text },
-			is_pinned: false,
-		});
+	// Channel to stream over content of new entries
+	const contentChannel = new Channel<clipboardEvent>();
+	contentChannel.onmessage = async (event) => {
+		// actually garbage code
+		cbEvents.find((entry) => entry.timestamp == event.timestamp)!.id = event.id;
+		cbEvents.find((entry) => entry.id == event.id)!.content = event.content;
+	};
+
+	// Listener of backend clipboard event notifications
+	listen<cbEventNotice>("cb-copy", async (event) => {
+		switch (event.payload.event_type) {
+			case "text": {
+				// TODO: maybe just get from the backend instead of relying on tauri
+				// clipboard manager plugin
+				// const text = readText();
+				cbEvents.unshift({
+					...event.payload,
+					content: { type: "Text", data: undefined },
+					is_pinned: false,
+				});
+				break;
+			}
+			case "image": {
+				const imgB64 = cbEvents.unshift({
+					...event.payload,
+					content: { type: "Image", data: undefined },
+					is_pinned: false,
+				});
+				break;
+			}
+		}
 	});
 
 	// Channel to stream over history on launch
@@ -168,6 +192,8 @@
 
 		// Load clipboard history
 		invoke("load_history", { onEvent: historyChannel });
+
+		invoke("set_event_channel", { channel: contentChannel });
 
 		// Cleanup handler
 		return () => {
