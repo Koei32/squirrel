@@ -4,7 +4,7 @@ on:
     pull_request:
         branches: ["master"]
         paths-ignore:
-            - src-tauri
+            - src-tauri/**
 
 jobs:
     frontend-lint:
