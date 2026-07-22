@@ -4,10 +4,15 @@ export enum cbEventType {
 	File = "file",
 }
 
+export type cbEventContent =
+	| { type: "Text"; data: string | undefined }
+	| { type: "Image"; data: Uint8Array<ArrayBufferLike> | undefined } // base64 encoded
+	| { type: "File"; data: string | undefined }; // TODO
+
 export type clipboardEvent = {
 	id: number;
 	event_type: cbEventType;
-	content: string;
+	content: cbEventContent;
 	timestamp: string;
 	is_pinned: boolean;
 };

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { clipboardEvent } from "$lib/types";
+	import type { cbEventType, clipboardEvent } from "$lib/types";
 	import { invoke } from "@tauri-apps/api/core";
 	const {
 		cbEvent,
@@ -27,6 +27,29 @@
 	let isPinned = $derived(cbEvent.is_pinned);
 	// This element
 	let element: HTMLElement | null = $state(null);
+	// Wrapper around this entry's content
+	let contentWrapperElement: HTMLDivElement | null = $state(null);
+	// If the entry is of the image type
+	let imageData: string | null = $state(null);
+
+	// Lazy loading for image data
+	$effect(() => {
+		if (cbEvent.event_type !== "image" || !contentWrapperElement) return;
+		// the delay is to wait for the content to be written to database before
+		// requesting it.
+		const observer = new IntersectionObserver(async ([e]) => {
+			setTimeout(async () => {
+				if (e.isIntersecting && !imageData) {
+					console.log("intersected!");
+					imageData = await invoke("get_entry_content", { id: cbEvent.id });
+					observer.disconnect();
+				}
+			}, 200);
+		});
+
+		observer.observe(contentWrapperElement);
+		return () => observer.disconnect();
+	});
 
 	/**
 	 * Focuses this element
@@ -117,10 +140,25 @@
 	role="option"
 	onclick={onClick}
 	aria-selected={active}>
-	<div class="content">
-		<p data-selectable="true">
-			{cbEvent.content}
-		</p>
+	<div class="content" bind:this={contentWrapperElement}>
+		{#if cbEvent.content.type == "Text"}
+			{#if cbEvent.content.data}
+				<p data-selectable="true">{cbEvent.content.data}</p>
+			{:else}
+				<span class="content-loading-text">loading content...</span>
+			{/if}
+		{:else if cbEvent.content.type == "Image"}
+			<div bind:this={contentWrapperElement} style="min-height: 2rem">
+				{#if imageData}
+					<img
+						style="max-width: 100%; max-height: 8rem"
+						src={`data:image/png;base64,${imageData}`}
+						alt="clipboard" />
+				{:else}
+					<span class="content-loading-text">loading image...</span>
+				{/if}
+			</div>
+		{/if}
 	</div>
 	<div class="footer">
 		<span class="time">{new Date(cbEvent.timestamp).toLocaleString()}</span>
@@ -234,6 +272,11 @@
 		min-width: 0;
 		width: 100%;
 		flex-grow: 1;
+	}
+
+	.content-loading-text {
+		font-size: 0.75rem;
+		color: var(--bg-accent);
 	}
 
 	.footer {

@@ -1,8 +1,12 @@
-use crate::clipboard::ClipboardEvent;
+use crate::clipboard::models::{CbEventContent, ClipboardEvent};
 use crate::db::Database;
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
+use clipboard_rs::common::RustImage;
 use clipboard_rs::{Clipboard, ClipboardContext};
 use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
+use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{ipc::Channel, State};
 // TODO: make a custom error type to return from tauri commands so that i dont
@@ -13,16 +17,26 @@ use tauri::{ipc::Channel, State};
 pub async fn copy_item(
     db: State<'_, Database>,
     skip: State<'_, AtomicBool>,
-    id: u16,
+    id: u32,
 ) -> std::result::Result<(), String> {
-    let content = db.get_entry(id);
+    let content = db.get_entry_content(id);
     let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
 
     // Skip the next copy event because it's caused by us
     skip.store(true, SeqCst);
-    cb.set_text(content.await.map_err(|e| e.to_string())?.content)
-        .map_err(|e| e.to_string())?;
 
+    match content.await.map_err(|e| e.to_string())? {
+        CbEventContent::Text(text) => cb.set_text(text).map_err(|e| e.to_string())?,
+        CbEventContent::Image(imgb64) => cb
+            .set_image(
+                clipboard_rs::RustImageData::from_bytes(
+                    STANDARD.decode(imgb64).unwrap().as_slice(),
+                )
+                .unwrap(),
+            )
+            .map_err(|e| e.to_string())?,
+        CbEventContent::File => todo!("file support"),
+    };
     Ok(())
 }
 
@@ -32,7 +46,7 @@ pub async fn copy_item(
 pub async fn paste_item(
     db: State<'_, Database>,
     skip: State<'_, AtomicBool>,
-    id: u16,
+    id: u32,
 ) -> std::result::Result<(), String> {
     copy_item(db, skip, id).await?;
     let mut keyboard = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
@@ -63,7 +77,7 @@ pub async fn paste_item(
 #[tauri::command(async)]
 pub async fn pin_entry(
     db: State<'_, Database>,
-    id: u16,
+    id: u32,
     is_pinned: bool,
 ) -> std::result::Result<(), String> {
     db.set_pinned(id, is_pinned)
@@ -74,9 +88,31 @@ pub async fn pin_entry(
 
 /// Removes the entry associated with the given id.
 #[tauri::command(async)]
-pub async fn remove_entry(db: State<'_, Database>, id: u16) -> std::result::Result<(), String> {
+pub async fn remove_entry(db: State<'_, Database>, id: u32) -> std::result::Result<(), String> {
     db.remove_entry(id).await.map_err(|e| e.to_string())?;
     Ok(())
+}
+
+/// Command to obtain the event channel from the frontend
+#[tauri::command(async)]
+pub async fn set_event_channel(
+    event_channel: State<'_, Mutex<Option<Channel<ClipboardEvent>>>>,
+    channel: Channel<ClipboardEvent>,
+) -> std::result::Result<(), String> {
+    let mut lock = event_channel.lock().map_err(|e| e.to_string())?;
+    *lock = Some(channel);
+    drop(lock);
+    Ok(())
+}
+
+/// Returns the content of the entry associated with the given id
+#[tauri::command(async)]
+pub async fn get_entry_content(
+    db: State<'_, Database>,
+    id: u32,
+) -> std::result::Result<String, String> {
+    let content = db.get_entry_content(id).await.map_err(|e| e.to_string())?;
+    Ok(content.into())
 }
 
 /// Sends the stored clipboard history over the provided channel, most recent

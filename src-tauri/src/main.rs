@@ -1,15 +1,19 @@
+#![warn(clippy::all, clippy::nursery, clippy::cargo)]
+#![allow(clippy::multiple_crate_versions)]
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
-
 mod clipboard;
 mod commands;
 mod db;
 
+use crate::clipboard::models::ClipboardEvent;
 use anyhow::Result;
 use db::Database;
 use std::sync::atomic::AtomicBool;
+use std::sync::Mutex;
 use std::{ffi::OsStr, fs::create_dir_all};
 use sysinfo::{ProcessRefreshKind, RefreshKind};
+use tauri::ipc::Channel;
 use tauri::{
     image::Image,
     menu::{Menu, MenuItem},
@@ -29,6 +33,9 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
 
     // Whether or not to ignore clipboard events
     let skip_event = AtomicBool::new(false);
+
+    // Channel over which events are sent
+    let event_channel: Mutex<Option<Channel<ClipboardEvent>>> = Mutex::new(None);
 
     Builder::default()
         .setup(move |app| {
@@ -68,6 +75,7 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
             // State management
             app.manage(db);
             app.manage(skip_event);
+            app.manage(event_channel);
 
             // Global launch hotkey
             let launch_hotkey =
@@ -90,7 +98,6 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_prevent_default::init())
         .invoke_handler(tauri::generate_handler![
             commands::clear_history,
@@ -99,6 +106,8 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
             commands::paste_item,
             commands::pin_entry,
             commands::remove_entry,
+            commands::get_entry_content,
+            commands::set_event_channel,
         ])
         .run(tauri::generate_context!())?;
 
@@ -112,7 +121,7 @@ async fn main() -> Result<()> {
     }
 
     // Whether we want to keep the window hidden at launch
-    let silent: bool = std::env::args().find(|arg| arg == "--silent").is_some();
+    let silent: bool = std::env::args().any(|arg| &arg == "--silent");
 
     // WebView2 experimental smooth scrolling flag, might remove later
     #[cfg(windows)]
