@@ -209,7 +209,7 @@
 			class="search"
 			bind:value={searchQuery}
 			bind:this={searchBar}
-			placeholder="press / to search" />
+			placeholder="press / to jump to search" />
 	</div>
 	<div class="feed" bind:this={feed}>
 		{#each filteredCbEvents as event, index (filteredCbEvents[index].id)}
