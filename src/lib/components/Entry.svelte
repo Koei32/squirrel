@@ -1,6 +1,8 @@
 <script lang="ts">
-	import type { cbEventType, clipboardEvent } from "$lib/types";
+	import type { clipboardEvent } from "$lib/types";
 	import { invoke } from "@tauri-apps/api/core";
+	import { imageCache } from "$lib/cache";
+
 	const {
 		cbEvent,
 		active = false,
@@ -35,16 +37,11 @@
 	// Lazy loading for image data
 	$effect(() => {
 		if (cbEvent.event_type !== "image" || !contentWrapperElement) return;
-		// the delay is to wait for the content to be written to database before
-		// requesting it.
 		const observer = new IntersectionObserver(async ([e]) => {
-			setTimeout(async () => {
-				if (e.isIntersecting && !imageData) {
-					console.log("intersected!");
-					imageData = await invoke("get_entry_content", { id: cbEvent.id });
-					observer.disconnect();
-				}
-			}, 200);
+			if (e.isIntersecting && !imageData) {
+				imageData = await imageCache.get(cbEvent.id);
+				observer.disconnect();
+			}
 		});
 
 		observer.observe(contentWrapperElement);
@@ -52,10 +49,10 @@
 	});
 
 	/**
-	 * Focuses this element
+	 * Focuses this element.
 	 */
 	export function focusElement() {
-		// element always exists
+		// non-null assertion: Element always exists
 		element!.focus();
 	}
 
@@ -74,7 +71,7 @@
 
 	/**
 	 * Sets the pinned state of the Entry and invokes the `pin_entry` command
-	 * in the backend.
+	 * in the backend. Also calls the UI pin function.
 	 */
 	export function handlePin() {
 		invoke("pin_entry", { id: cbEvent.id, isPinned });
