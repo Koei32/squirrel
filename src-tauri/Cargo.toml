@@ -1,6 +1,6 @@
 [package]
 name = "squirrel"
-version = "0.2.0"
+version = "0.3.0"
 description = "A clipboard manager"
 keywords = ["clipboard manager"]
 # i really dont know if Squirrel falls into any category 
