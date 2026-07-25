@@ -28,7 +28,7 @@ chrono = "0.4.44"
 enigo = "0.6.1"
 dirs = "6.0.0"
 sysinfo = "0.39.5"
-base64 = "0.22.1"
+base64 = "0.23.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"
