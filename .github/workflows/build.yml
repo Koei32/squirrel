@@ -42,4 +42,6 @@ jobs:
                   name: builds
                   path: |
                       src-tauri/target/release/squirrel
-                      src-tauri/target/release/bundle
+                      src-tauri/target/release/bundle/appimage/squirrel*.AppImage
+                      src-tauri/target/release/bundle/deb/squirrel*.deb
+                      src-tauri/target/release/bundle/rpm/squirrel*.rpm
