@@ -23,6 +23,10 @@ interface with the operating system's clipboard in order to listen to and captur
 
 <img width="600" height="338" alt="paste" src="https://github.com/user-attachments/assets/a08b4930-2d22-4dc8-8fbd-61f6bfa66b77" />
 
+- **Image Support**: In addition to text, Squirrel supports images of up to ~5 megabytes in size.
+
+<img width="600" height="338" alt="image" src="https://github.com/user-attachments/assets/5b8fde3d-0b2e-4d07-b4d2-0d9ba9bcb4d0" />
+
 - **Pinning**: Pin important items to the top of the list.
 
 <img width="600" height="338" alt="image" src="https://github.com/user-attachments/assets/c3838359-eb32-4405-a5e8-2833d3d8bf86" />
@@ -100,7 +104,8 @@ All icons except the Squirrel logo are Copyright (c) 2026 Lucide Icons and Contr
 
 - [ ] proper linux support & testing
 - [x] pinning entries
-- [ ] image & file copy support
-- [ ] lazy loading history
+- [x] image support
+- [ ] file support
+- [x] lazy loading history
 - [ ] custom data storage format (?)
 - [ ] mac support (?)
