@@ -25,11 +25,11 @@ interface with the operating system's clipboard in order to listen to and captur
 
 - **Image Support**: In addition to text, Squirrel supports images of up to ~5 megabytes in size.
 
-<img width="600" height="338" alt="image" src="https://github.com/user-attachments/assets/5b8fde3d-0b2e-4d07-b4d2-0d9ba9bcb4d0" />
+<img width="600" height="338" alt="images" src="https://github.com/user-attachments/assets/5b8fde3d-0b2e-4d07-b4d2-0d9ba9bcb4d0" />
 
 - **Pinning**: Pin important items to the top of the list.
 
-<img width="600" height="338" alt="image" src="https://github.com/user-attachments/assets/c3838359-eb32-4405-a5e8-2833d3d8bf86" />
+<img width="600" height="338" alt="pin" src="https://github.com/user-attachments/assets/c3838359-eb32-4405-a5e8-2833d3d8bf86" />
 
 - **Item search**: Instant exact string search.
 
@@ -43,6 +43,18 @@ interface with the operating system's clipboard in order to listen to and captur
   There isn't a defined limit to the amount of entries that can be stored. Store as much as you want.
   Though practically, the program might load the history a bit slowly when there's a very large
   amount of items.
+
+### Shortcuts
+
+- `Ctrl` `Shift` `V`: show Squirrel
+- `Esc`: hide Squirrel
+- `←` `↑` `→` `↓`: navigation
+- `/`: jump to searchbar
+- `Ctrl` `C`: copy selected item
+- `Ctrl` `P`: pin/unpin selected item
+- `Return`: paste selected item into last focused window
+- `Delete`: delete an item
+- `Ctrl` `Shift` `Delete`: permanently clear _**all**_ history (!)
 
 ## Installation
 
