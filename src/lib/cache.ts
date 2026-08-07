@@ -17,7 +17,9 @@ class ImageCache {
 		if (this.cache.has(id)) {
 			return this.cache.get(id)!;
 		} else {
+			console.log("getting data");
 			const data: string = await invoke("get_entry_content", { id: id });
+			console.log(data);
 			if (this.cache.size >= this.max_items) {
 				this.cache.delete(this.cache.keys().next().value!);
 			}

@@ -34,7 +34,7 @@ impl From<ClipboardEntryRow> for ClipboardEvent {
         let content = match row.event_type {
             CbEventType::Text => CbEventContent::Text(row.content.unwrap()),
             CbEventType::Image => CbEventContent::Image(row.content.unwrap_or_default()),
-            CbEventType::File => todo!("file"),
+            CbEventType::Files => todo!("file"),
         };
 
         Self {
@@ -96,7 +96,7 @@ impl Database {
         let content: CbEventContent = match row.event_type {
             CbEventType::Text => CbEventContent::Text(row.content),
             CbEventType::Image => CbEventContent::Image(row.content),
-            CbEventType::File => todo!("file support"),
+            CbEventType::Files => todo!("file support"),
         };
 
         Ok(content)

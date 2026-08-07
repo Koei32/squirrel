@@ -35,7 +35,7 @@ pub async fn copy_item(
                 .unwrap(),
             )
             .map_err(|e| e.to_string())?,
-        CbEventContent::File => todo!("file support"),
+        CbEventContent::Files => todo!("file support"),
     };
     Ok(())
 }

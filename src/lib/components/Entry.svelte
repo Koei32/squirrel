@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { clipboardEvent } from "$lib/types";
+	import { cbEventType, type clipboardEvent } from "$lib/types";
 	import { invoke } from "@tauri-apps/api/core";
 	import { imageCache } from "$lib/cache";
 
@@ -36,7 +36,7 @@
 
 	// Lazy loading for image data
 	$effect(() => {
-		if (cbEvent.event_type !== "image" || !contentWrapperElement) return;
+		if (cbEvent.event_type !== cbEventType.Image || !contentWrapperElement) return;
 		const observer = new IntersectionObserver(async ([e]) => {
 			if (e.isIntersecting && !imageData) {
 				imageData = await imageCache.get(cbEvent.id);
@@ -138,13 +138,13 @@
 	onclick={onClick}
 	aria-selected={active}>
 	<div class="content" bind:this={contentWrapperElement}>
-		{#if cbEvent.content.type == "Text"}
+		{#if cbEvent.content.type == cbEventType.Text}
 			{#if cbEvent.content.data}
 				<p data-selectable="true">{cbEvent.content.data}</p>
 			{:else}
 				<span class="content-loading-text">loading content...</span>
 			{/if}
-		{:else if cbEvent.content.type == "Image"}
+		{:else if cbEvent.content.type == cbEventType.Image}
 			<div bind:this={contentWrapperElement} style="min-height: 2rem">
 				{#if imageData}
 					<img
