@@ -30,7 +30,12 @@
 				}
 				if (event.content.type == cbEventType.Image) return false;
 
-				return event.content.data?.toLowerCase().includes(searchQuery.trim().toLowerCase());
+				return event.content.type == cbEventType.File
+					? event.content.data
+							?.join()
+							.toLowerCase()
+							.includes(searchQuery.trim().toLowerCase())
+					: event.content.data?.toLowerCase().includes(searchQuery.trim().toLowerCase());
 			})
 			.concat(
 				cbEvents.filter((event) => {
@@ -53,24 +58,11 @@
 
 	// Listener of backend clipboard event notifications
 	listen<cbEventNotice>("cb-copy", async (event) => {
-		switch (event.payload.event_type) {
-			case cbEventType.Text: {
-				cbEvents.unshift({
-					...event.payload,
-					content: { type: event.payload.event_type, data: undefined },
-					is_pinned: false,
-				});
-				break;
-			}
-			case cbEventType.Image: {
-				cbEvents.unshift({
-					...event.payload,
-					content: { type: event.payload.event_type, data: undefined },
-					is_pinned: false,
-				});
-				break;
-			}
-		}
+		cbEvents.unshift({
+			...event.payload,
+			content: { type: event.payload.event_type, data: undefined },
+			is_pinned: false,
+		});
 	});
 
 	// Channel to stream over history on launch

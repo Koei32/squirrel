@@ -16,25 +16,24 @@ pub struct Database {
 struct ClipboardEntryRow {
     pub id: u32,
     pub event_type: CbEventType,
-    /// Either text for text or base64 for images
     pub content: Option<String>,
     pub timestamp: String,
     pub is_pinned: bool,
 }
 
-#[derive(sqlx::FromRow)]
-struct CbEntryContentRow {
-    pub event_type: CbEventType,
-    pub content: String,
-}
-
-#[allow(clippy::fallible_impl_from)] // files are todo
+#[allow(clippy::fallible_impl_from)]
 impl From<ClipboardEntryRow> for ClipboardEvent {
     fn from(row: ClipboardEntryRow) -> Self {
         let content = match row.event_type {
             CbEventType::Text => CbEventContent::Text(row.content.unwrap()),
             CbEventType::Image => CbEventContent::Image(row.content.unwrap_or_default()),
-            CbEventType::Files => todo!("file"),
+            CbEventType::File => CbEventContent::File(
+                row.content
+                    .unwrap()
+                    .split("\0")
+                    .map(|x| x.to_owned())
+                    .collect(),
+            ),
         };
 
         Self {
@@ -43,6 +42,24 @@ impl From<ClipboardEntryRow> for ClipboardEvent {
             is_pinned: row.is_pinned,
             timestamp: row.timestamp,
             content,
+        }
+    }
+}
+
+#[derive(sqlx::FromRow)]
+struct CbEntryContentRow {
+    pub event_type: CbEventType,
+    pub content: String,
+}
+
+impl From<CbEntryContentRow> for CbEventContent {
+    fn from(row: CbEntryContentRow) -> Self {
+        match row.event_type {
+            CbEventType::Text => Self::Text(row.content),
+            CbEventType::Image => Self::Image(row.content),
+            CbEventType::File => {
+                Self::File(row.content.split("\0").map(|x| x.to_owned()).collect())
+            }
         }
     }
 }
@@ -93,11 +110,7 @@ impl Database {
                 .fetch_one(&self.pool)
                 .await?;
 
-        let content: CbEventContent = match row.event_type {
-            CbEventType::Text => CbEventContent::Text(row.content),
-            CbEventType::Image => CbEventContent::Image(row.content),
-            CbEventType::Files => todo!("file support"),
-        };
+        let content: CbEventContent = row.into();
 
         Ok(content)
     }
@@ -119,7 +132,7 @@ impl Database {
             SELECT 
                 id, 
                 event_type, 
-                CASE WHEN event_type = 'text' THEN content ELSE NULL END as content,
+                CASE WHEN event_type = 'text' OR event_type = 'file' THEN content ELSE NULL END as content,
                 timestamp,
                 is_pinned
                 FROM clipboard 

@@ -10,18 +10,8 @@ use tokio::sync::mpsc::{self};
 #[serde(rename_all = "PascalCase")]
 pub enum CbEventType {
     Text,
-    Image, // TODO
-    Files, // TODO
-}
-
-impl From<CbEventType> for String {
-    fn from(value: CbEventType) -> Self {
-        match value {
-            CbEventType::Text => "text".to_string(),
-            CbEventType::Image => "image".to_string(),
-            CbEventType::Files => "files".to_string(),
-        }
-    }
+    Image,
+    File,
 }
 
 impl CbEventType {
@@ -29,7 +19,7 @@ impl CbEventType {
         match self {
             Self::Text => "text",
             Self::Image => "image",
-            Self::Files => "files",
+            Self::File => "file",
         }
     }
 }
@@ -38,8 +28,10 @@ impl CbEventType {
 #[serde(tag = "type", content = "data")]
 pub enum CbEventContent {
     Text(String),
-    Image(String), // base64 encoded
-    Files,         // todo
+    /// Base64 encoded PNG image data
+    Image(String),
+    /// A list of file paths
+    File(Vec<String>),
 }
 
 impl CbEventContent {
@@ -47,7 +39,7 @@ impl CbEventContent {
         match self {
             Self::Text(_) => CbEventType::Text,
             Self::Image(_) => CbEventType::Image,
-            Self::Files => CbEventType::Files,
+            Self::File(_) => CbEventType::File,
         }
     }
 }
@@ -55,9 +47,9 @@ impl CbEventContent {
 impl From<CbEventContent> for String {
     fn from(value: CbEventContent) -> Self {
         match value {
-            CbEventContent::Text(x) => x,
+            CbEventContent::Text(text) => text,
             CbEventContent::Image(b64) => b64,
-            CbEventContent::Files => todo!(),
+            CbEventContent::File(file) => file.join("\0"),
         }
     }
 }

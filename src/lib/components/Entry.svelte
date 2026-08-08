@@ -38,7 +38,8 @@
 	$effect(() => {
 		if (cbEvent.event_type !== cbEventType.Image || !contentWrapperElement) return;
 		const observer = new IntersectionObserver(async ([e]) => {
-			if (e.isIntersecting && !imageData) {
+			// cbEvent.id == 0 when the entry hasnt been written to the database in the backend yet.
+			if (e.isIntersecting && !imageData && cbEvent.id !== 0) {
 				imageData = await imageCache.get(cbEvent.id);
 				observer.disconnect();
 			}
@@ -145,28 +146,80 @@
 				<span class="content-loading-text">loading content...</span>
 			{/if}
 		{:else if cbEvent.content.type == cbEventType.Image}
-			<div bind:this={contentWrapperElement} style="min-height: 2rem">
-				{#if imageData}
-					<img
-						style="max-width: 100%; max-height: 8rem"
-						src={`data:image/png;base64,${imageData}`}
-						alt="clipboard" />
-				{:else}
-					<span class="content-loading-text">loading image...</span>
-				{/if}
-			</div>
+			{#if imageData}
+				<img
+					style="max-width: 100%; min-height: 2rem; max-height: 8rem"
+					src={`data:image/png;base64,${imageData}`}
+					alt="clipboard" />
+			{:else}
+				<span class="content-loading-text">loading image...</span>
+			{/if}
+		{:else if cbEvent.content.type == cbEventType.File}
+			{#if cbEvent.content.data}
+				{#each cbEvent.content.data as filepath}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<!-- svelte-ignore a11y_click_events_have_key_events -->
+					<span
+						class="filepath"
+						onclick={() => {
+							console.log(filepath);
+						}}>{filepath}</span>
+					<br />
+				{/each}
+			{:else}
+				<span class="content-loading-text">loading content...</span>
+			{/if}
 		{/if}
 	</div>
 	<div class="footer">
-		<span class="time">{new Date(cbEvent.timestamp).toLocaleString()}</span>
+		<span class="details">
+			{#if cbEvent.content.type == cbEventType.Text}
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="4"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="contenttype-icon text-icon"
+					><path d="M12 4v16" /><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" /><path
+						d="M9 20h6" /></svg>
+			{:else if cbEvent.content.type == cbEventType.Image}
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="3"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="contenttype-icon image-icon"
+					><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle
+						cx="9"
+						cy="9"
+						r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+			{:else if cbEvent.content.type == cbEventType.File}
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="3"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="contenttype-icon file-icon"
+					><path
+						d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path
+						d="M14 2v5a1 1 0 0 0 1 1h5" /></svg>
+			{/if}
+			{new Date(cbEvent.timestamp).toLocaleString()}
+		</span>
 		<div class="buttons">
-			<!-- Icons from https://lucide.dev -->
 			<button onclick={handleCopy} title="Copy">
 				{#if isCopied}
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						width="24"
-						height="24"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
@@ -180,8 +233,6 @@
 				{:else}
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						width="24"
-						height="24"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
@@ -201,8 +252,6 @@
 				title={isPinned ? "Unpin" : "Pin"}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -217,8 +266,6 @@
 			<button onclick={handleRemove} title="Delete">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -284,10 +331,23 @@
 		align-items: center;
 	}
 
-	.time {
+	.filepath {
+		text-decoration: underline;
+		cursor: pointer;
+	}
+
+	.details {
 		font-family: monospace;
+		display: flex;
 		font-size: 0.6rem;
 		color: var(--fg-accent);
+	}
+
+	.contenttype-icon {
+		height: 0.7rem;
+		justify-self: center;
+		align-self: center;
+		margin-right: 0.25rem;
 	}
 
 	p {

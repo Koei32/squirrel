@@ -79,7 +79,15 @@ impl ClipboardHandler for ClipboardListener {
             });
         } else if self.ctx.has(ContentFormat::Files) {
             if let Ok(paths) = self.ctx.get_files() {
-                dbg!(paths);
+                let hash = calculate_hash(&paths);
+                let mut last = self.last_hash.lock().unwrap();
+                if Some(hash) == *last {
+                    return;
+                }
+                *last = Some(hash);
+                drop(last);
+
+                let _ = self.tx.send(CbEventContent::File(paths));
             }
         }
     }
