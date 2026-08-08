@@ -157,12 +157,13 @@
 		{:else if cbEvent.content.type == cbEventType.File}
 			{#if cbEvent.content.data}
 				{#each cbEvent.content.data as filepath}
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
 					<span
+						role="button"
+						tabindex="-1"
 						class="filepath"
+						onkeydown={() => {}}
 						onclick={() => {
-							console.log(filepath);
+							invoke("reveal_in_explorer", { file: filepath });
 						}}>{filepath}</span>
 					<br />
 				{/each}
