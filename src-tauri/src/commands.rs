@@ -18,7 +18,7 @@ pub async fn copy_item(
     db: State<'_, Database>,
     skip: State<'_, AtomicBool>,
     id: u32,
-) -> std::result::Result<(), String> {
+) -> Result<(), String> {
     let content = db.get_entry_content(id);
     let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
 
@@ -35,7 +35,7 @@ pub async fn copy_item(
                 .unwrap(),
             )
             .map_err(|e| e.to_string())?,
-        CbEventContent::File => todo!("file support"),
+        CbEventContent::File(paths) => cb.set_files(paths).map_err(|e| e.to_string())?,
     };
     Ok(())
 }
@@ -47,7 +47,7 @@ pub async fn paste_item(
     db: State<'_, Database>,
     skip: State<'_, AtomicBool>,
     id: u32,
-) -> std::result::Result<(), String> {
+) -> Result<(), String> {
     copy_item(db, skip, id).await?;
     let mut keyboard = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
 
@@ -75,11 +75,7 @@ pub async fn paste_item(
 }
 
 #[tauri::command(async)]
-pub async fn pin_entry(
-    db: State<'_, Database>,
-    id: u32,
-    is_pinned: bool,
-) -> std::result::Result<(), String> {
+pub async fn pin_entry(db: State<'_, Database>, id: u32, is_pinned: bool) -> Result<(), String> {
     db.set_pinned(id, is_pinned)
         .await
         .map_err(|e| e.to_string())?;
@@ -88,7 +84,7 @@ pub async fn pin_entry(
 
 /// Removes the entry associated with the given id.
 #[tauri::command(async)]
-pub async fn remove_entry(db: State<'_, Database>, id: u32) -> std::result::Result<(), String> {
+pub async fn remove_entry(db: State<'_, Database>, id: u32) -> Result<(), String> {
     db.remove_entry(id).await.map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -98,7 +94,7 @@ pub async fn remove_entry(db: State<'_, Database>, id: u32) -> std::result::Resu
 pub async fn set_event_channel(
     event_channel: State<'_, Mutex<Option<Channel<ClipboardEvent>>>>,
     channel: Channel<ClipboardEvent>,
-) -> std::result::Result<(), String> {
+) -> Result<(), String> {
     let mut lock = event_channel.lock().map_err(|e| e.to_string())?;
     *lock = Some(channel);
     drop(lock);
@@ -107,10 +103,7 @@ pub async fn set_event_channel(
 
 /// Returns the content of the entry associated with the given id
 #[tauri::command(async)]
-pub async fn get_entry_content(
-    db: State<'_, Database>,
-    id: u32,
-) -> std::result::Result<String, String> {
+pub async fn get_entry_content(db: State<'_, Database>, id: u32) -> Result<String, String> {
     let content = db.get_entry_content(id).await.map_err(|e| e.to_string())?;
     Ok(content.into())
 }
@@ -121,7 +114,7 @@ pub async fn get_entry_content(
 pub async fn load_history(
     db: State<'_, Database>,
     on_event: Channel<ClipboardEvent>,
-) -> std::result::Result<(), String> {
+) -> Result<(), String> {
     let events = db.get_entries().await.map_err(|e| e.to_string())?;
     for event in events {
         let _ = on_event.send(event.clone());
@@ -131,7 +124,29 @@ pub async fn load_history(
 
 /// Clears the entire clipboard history, permanently.
 #[tauri::command(async)]
-pub async fn clear_history(db: State<'_, Database>) -> std::result::Result<(), String> {
+pub async fn clear_history(db: State<'_, Database>) -> Result<(), String> {
     db.clear_entries().await.map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn reveal_in_explorer(file: String) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    std::process::Command::new("explorer")
+        .arg(format!("/select,{}", file))
+        .spawn()
+        .map_err(|e| e.to_string())?;
+
+    #[cfg(target_os = "linux")]
+    {
+        let parent = std::path::Path::new(&file)
+            .parent()
+            .unwrap_or_else(|| std::path::Path::new("/"));
+        std::process::Command::new("xdg-open")
+            .arg(parent)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+
     Ok(())
 }

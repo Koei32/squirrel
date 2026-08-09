@@ -6,22 +6,12 @@ use tauri::AppHandle;
 use tokio::sync::mpsc::{self};
 
 #[derive(Clone, Debug, Serialize, Deserialize, sqlx::Type, Copy)]
-#[sqlx(type_name = "TEXT", rename_all = "snake_case")]
-#[serde(rename_all = "camelCase")]
+#[sqlx(type_name = "TEXT", rename_all = "camelCase")]
+#[serde(rename_all = "PascalCase")]
 pub enum CbEventType {
     Text,
-    Image, // TODO
-    File,  // TODO
-}
-
-impl From<CbEventType> for String {
-    fn from(value: CbEventType) -> Self {
-        match value {
-            CbEventType::Text => "text".to_string(),
-            CbEventType::Image => "image".to_string(),
-            CbEventType::File => "file".to_string(),
-        }
-    }
+    Image,
+    File,
 }
 
 impl CbEventType {
@@ -38,8 +28,10 @@ impl CbEventType {
 #[serde(tag = "type", content = "data")]
 pub enum CbEventContent {
     Text(String),
-    Image(String), // base64 encoded
-    File,          // todo
+    /// Base64 encoded PNG image data
+    Image(String),
+    /// A list of file paths
+    File(Vec<String>),
 }
 
 impl CbEventContent {
@@ -47,7 +39,7 @@ impl CbEventContent {
         match self {
             Self::Text(_) => CbEventType::Text,
             Self::Image(_) => CbEventType::Image,
-            Self::File => CbEventType::File,
+            Self::File(_) => CbEventType::File,
         }
     }
 }
@@ -55,9 +47,9 @@ impl CbEventContent {
 impl From<CbEventContent> for String {
     fn from(value: CbEventContent) -> Self {
         match value {
-            CbEventContent::Text(x) => x,
+            CbEventContent::Text(text) => text,
             CbEventContent::Image(b64) => b64,
-            CbEventContent::File => todo!(),
+            CbEventContent::File(file) => file.join("\0"),
         }
     }
 }

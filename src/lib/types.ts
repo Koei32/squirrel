@@ -1,13 +1,13 @@
 export enum cbEventType {
-	Text = "text",
-	Image = "image",
-	File = "file",
+	Text = "Text",
+	Image = "Image",
+	File = "File",
 }
 
 export type cbEventContent =
-	| { type: "Text"; data: string | undefined }
-	| { type: "Image"; data: Uint8Array<ArrayBufferLike> | undefined } // base64 encoded
-	| { type: "File"; data: string | undefined }; // TODO
+	| { type: cbEventType.Text; data: string | undefined }
+	| { type: cbEventType.Image; data: Uint8Array<ArrayBufferLike> | undefined } // base64 encoded
+	| { type: cbEventType.File; data: Array<string> | undefined }; // list of paths
 
 export type clipboardEvent = {
 	id: number;

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 	import Entry from "../lib/components/Entry.svelte";
-	import { type cbEventNotice, type clipboardEvent } from "../lib/types";
+	import { cbEventType, type cbEventNotice, type clipboardEvent } from "../lib/types";
 	import { invoke, Channel } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 	import { onMount, tick } from "svelte";
@@ -28,9 +28,14 @@
 				if (!searchQuery.trim().toLowerCase()) {
 					return event.is_pinned;
 				}
-				if (event.content.type == "Image") return false;
+				if (event.content.type == cbEventType.Image) return false;
 
-				return event.content.data?.toLowerCase().includes(searchQuery.trim().toLowerCase());
+				return event.content.type == cbEventType.File
+					? event.content.data
+							?.join()
+							.toLowerCase()
+							.includes(searchQuery.trim().toLowerCase())
+					: event.content.data?.toLowerCase().includes(searchQuery.trim().toLowerCase());
 			})
 			.concat(
 				cbEvents.filter((event) => {
@@ -53,24 +58,11 @@
 
 	// Listener of backend clipboard event notifications
 	listen<cbEventNotice>("cb-copy", async (event) => {
-		switch (event.payload.event_type) {
-			case "text": {
-				cbEvents.unshift({
-					...event.payload,
-					content: { type: "Text", data: undefined },
-					is_pinned: false,
-				});
-				break;
-			}
-			case "image": {
-				const imgB64 = cbEvents.unshift({
-					...event.payload,
-					content: { type: "Image", data: undefined },
-					is_pinned: false,
-				});
-				break;
-			}
-		}
+		cbEvents.unshift({
+			...event.payload,
+			content: { type: event.payload.event_type, data: undefined },
+			is_pinned: false,
+		});
 	});
 
 	// Channel to stream over history on launch

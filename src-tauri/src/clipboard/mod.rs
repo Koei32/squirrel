@@ -77,6 +77,18 @@ impl ClipboardHandler for ClipboardListener {
                     let _ = tx.send(CbEventContent::Image(b64));
                 }
             });
+        } else if self.ctx.has(ContentFormat::Files) {
+            if let Ok(paths) = self.ctx.get_files() {
+                let hash = calculate_hash(&paths);
+                let mut last = self.last_hash.lock().unwrap();
+                if Some(hash) == *last {
+                    return;
+                }
+                *last = Some(hash);
+                drop(last);
+
+                let _ = self.tx.send(CbEventContent::File(paths));
+            }
         }
     }
 }
@@ -107,11 +119,12 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
             timestamp: Local::now().to_rfc3339(),
             is_pinned: false,
         };
-        // Notify the about the event frontend first
+
+        // Notify the frontend about the event first
         let _ = app.emit("cb-copy", ClipboardEventNotice::from(&event));
-        let event = db.create_entry(event).await?;
 
         // Then send the content after writing it to db
+        let event = db.create_entry(event).await?;
         let channel = app.state::<Mutex<Option<Channel<ClipboardEvent>>>>();
         let mut lock = channel.lock().unwrap();
         lock.as_mut().unwrap().send(event)?;
