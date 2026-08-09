@@ -39,6 +39,7 @@
 		if (cbEvent.event_type !== cbEventType.Image || !contentWrapperElement) return;
 		const observer = new IntersectionObserver(async ([e]) => {
 			// cbEvent.id == 0 when the entry hasnt been written to the database in the backend yet.
+			// TODO(?): native id counting/tracking instead of relying on sqlite autoincrement
 			if (e.isIntersecting && !imageData && cbEvent.id !== 0) {
 				imageData = await imageCache.get(cbEvent.id);
 				observer.disconnect();
@@ -168,7 +169,7 @@
 					<br />
 				{/each}
 			{:else}
-				<span class="content-loading-text">loading content...</span>
+				<span class="content-loading-text">loading files...</span>
 			{/if}
 		{/if}
 	</div>
@@ -217,7 +218,7 @@
 			{new Date(cbEvent.timestamp).toLocaleString()}
 		</span>
 		<div class="buttons">
-			<button onclick={handleCopy} title="Copy">
+			<button tabindex="-1" onclick={handleCopy} title="Copy">
 				{#if isCopied}
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -246,11 +247,7 @@
 					</svg>
 				{/if}
 			</button>
-			<button
-				onclick={() => {
-					handlePin();
-				}}
-				title={isPinned ? "Unpin" : "Pin"}>
+			<button tabindex="-1" onclick={handlePin} title={isPinned ? "Unpin" : "Pin"}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 24 24"
@@ -264,7 +261,7 @@
 						d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
 				</svg>
 			</button>
-			<button onclick={handleRemove} title="Delete">
+			<button tabindex="-1" onclick={handleRemove} title="Delete">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 24 24"

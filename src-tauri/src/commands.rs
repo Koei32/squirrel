@@ -35,7 +35,7 @@ pub async fn copy_item(
                 .unwrap(),
             )
             .map_err(|e| e.to_string())?,
-        CbEventContent::File(files) => cb.set_files(files).map_err(|e| e.to_string())?,
+        CbEventContent::File(paths) => cb.set_files(paths).map_err(|e| e.to_string())?,
     };
     Ok(())
 }
