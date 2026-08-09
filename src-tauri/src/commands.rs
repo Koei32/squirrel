@@ -139,12 +139,12 @@ pub async fn reveal_in_explorer(file: String) -> Result<(), String> {
 
     #[cfg(target_os = "linux")]
     {
-        let parent = std::path::Path::new(file)
+        let parent = std::path::Path::new(&file)
             .parent()
-            .unwrap_or(std::path::Path::new("/"));
+            .unwrap_or_else(|| std::path::Path::new("/"));
         std::process::Command::new("xdg-open")
             .arg(parent)
-            .spawn()?
+            .spawn()
             .map_err(|e| e.to_string())?;
     }
 
