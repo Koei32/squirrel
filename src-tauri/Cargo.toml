@@ -8,7 +8,7 @@ keywords = ["clipboard manager"]
 categories = ["accessibility"] 
 repository = "https://github.com/Koei32/squirrel"
 readme = "../../README.md"
-license = "GPL-3.0-or-later"
+license = "GPL-3.0-only"
 authors = ["Koei"]
 edition = "2021"
 
