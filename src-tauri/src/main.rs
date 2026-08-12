@@ -4,13 +4,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod clipboard;
 mod commands;
+mod config;
 mod db;
 
 use crate::clipboard::models::ClipboardEvent;
 use anyhow::Result;
+use config::Config;
 use db::Database;
 use std::sync::atomic::AtomicBool;
-use std::sync::Mutex;
+use std::sync::{Arc, LazyLock, Mutex};
 use std::{ffi::OsStr, fs::create_dir_all};
 use sysinfo::{ProcessRefreshKind, RefreshKind};
 use tauri::ipc::Channel;
@@ -22,12 +24,27 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
+static CONFIG: LazyLock<Arc<Mutex<Config>>> =
+    LazyLock::new(|| Arc::new(Mutex::new(Config::default())));
+
 async fn run_tauri_app(silent: bool) -> Result<()> {
-    let mut db_url = dirs::data_dir().expect("Failed to get data directory");
-    db_url.push("Squirrel");
-    if !db_url.exists() {
-        create_dir_all(&db_url)?;
+    let mut data_dir = dirs::data_dir().expect("Failed to get data directory");
+    data_dir.push("Squirrel");
+    if !data_dir.exists() {
+        create_dir_all(&data_dir)?;
     }
+
+    let mut cfg_path = data_dir;
+    cfg_path.push("squirrel.toml");
+    let config = Config::load(&cfg_path)?;
+
+    {
+        let mut lock = CONFIG.lock().unwrap();
+        *lock = config.clone();
+    }
+
+    let mut db_url = cfg_path;
+    db_url.pop();
     db_url.push("data.db");
     let db = Database::new(db_url.to_str().unwrap()).await?;
 

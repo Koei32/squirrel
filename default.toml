@@ -1,0 +1,21 @@
+# App theme. Valid values are "dark", "light" and "system".
+theme = "system"
+
+# Number of days after which a clipboard history item is automatically deleted (unless pinned).
+history_ttl = 7
+
+# Whether the clipboard history persists between app launches.
+persistence = true
+
+# Max image size (in bytes) Squirrel should capture.
+max_image_size = 5_000_000
+
+# Ignore clipboard events when any of the specified programs are focused.
+# e.g. ["foo.exe", "bar.exe"]
+ignore = []
+
+# Which clipboard item types to capture.
+[types]
+text = true
+images = true
+files = false

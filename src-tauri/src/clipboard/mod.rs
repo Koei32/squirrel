@@ -2,6 +2,7 @@
 
 pub mod models;
 use crate::db::Database;
+use crate::CONFIG;
 use anyhow::Result;
 use base64::Engine;
 use chrono::Local;
@@ -26,7 +27,10 @@ impl ClipboardHandler for ClipboardListener {
             return;
         }
 
-        if self.ctx.has(ContentFormat::Text) {
+        // TODO: maybe make the ClipboardListener hold copies of relevant config items so as to not
+        // call app.state() every time.
+
+        if self.ctx.has(ContentFormat::Text) && CONFIG.lock().unwrap().types.text {
             if let Ok(text) = self.ctx.get_text() {
                 // Reject whitespace only copy
                 if text.trim().is_empty() {
@@ -44,9 +48,10 @@ impl ClipboardHandler for ClipboardListener {
 
                 let _ = self.tx.send(CbEventContent::Text(text));
             }
-        } else if self.ctx.has(ContentFormat::Image) {
+        } else if self.ctx.has(ContentFormat::Image) && CONFIG.lock().unwrap().types.images {
             let tx = self.tx.clone();
             let last_hash = self.last_hash.clone();
+            let max_image_size = CONFIG.lock().unwrap().max_image_size as usize;
 
             tauri::async_runtime::spawn(async move {
                 let result = tokio::task::spawn_blocking(move || -> Option<String> {
@@ -55,7 +60,7 @@ impl ClipboardHandler for ClipboardListener {
                     let png = img.to_png().ok()?;
                     let img_bytes = png.get_bytes();
 
-                    if img_bytes.len() > 5_000_000 {
+                    if img_bytes.len() > max_image_size {
                         return None;
                     }
 
@@ -77,7 +82,7 @@ impl ClipboardHandler for ClipboardListener {
                     let _ = tx.send(CbEventContent::Image(b64));
                 }
             });
-        } else if self.ctx.has(ContentFormat::Files) {
+        } else if self.ctx.has(ContentFormat::Files) && CONFIG.lock().unwrap().types.files {
             if let Ok(paths) = self.ctx.get_files() {
                 let hash = calculate_hash(&paths);
                 let mut last = self.last_hash.lock().unwrap();
