@@ -16,19 +16,20 @@ edition = "2021"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+anyhow = "1.0.102"
+base64 = "0.23.0"
+chrono = "0.4.44"
+clipboard-rs = "0.3.4"
+dirs = "6.0.0"
+enigo = "0.6.1"
+serde = { version = "1", features = ["derive"] }
+sqlx = { version = "0.9.0", features = ["sqlite", "runtime-tokio", "macros"] }
+sysinfo = "0.39.5"
 tauri = {  version = "2.0.0", features = [ "tray-icon", "image-png" ] }
 tauri-plugin-opener = "2"
-serde = { version = "1", features = ["derive"] }
 tauri-plugin-prevent-default = "5"
-clipboard-rs = "0.3.4"
-anyhow = "1.0.102"
 tokio = { version="1.52.3", features = ["macros"] }
-sqlx = { version = "0.9.0", features = ["sqlite", "runtime-tokio", "macros"] }
-chrono = "0.4.44"
-enigo = "0.6.1"
-dirs = "6.0.0"
-sysinfo = "0.39.5"
-base64 = "0.23.0"
+toml = "1.1.4"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-global-shortcut = "2"
