@@ -3,10 +3,14 @@
 	import Titlebar from "$lib/components/Titlebar.svelte";
 	import "../app.css";
 	import { invoke } from "@tauri-apps/api/core";
+	import type { Theme } from "$lib/types";
 	let { children } = $props();
 
-	let theme: string = $state("light");
+	let theme: Theme = $state("light");
 
+	/**
+	 * Gets the theme from the backend config and applies it.
+	 */
 	async function setTheme() {
 		theme = await invoke("get_theme");
 		if (theme == "system") {
