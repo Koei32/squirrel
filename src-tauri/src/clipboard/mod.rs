@@ -114,6 +114,21 @@ pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
 
 async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>) -> Result<()> {
     let db = app.state::<Database>();
+    let state_channel = app.state::<Mutex<Option<Channel<ClipboardEvent>>>>();
+    let channel: Channel<ClipboardEvent>;
+
+    // Wait until the event channel is established
+    // TODO: figure out a way to make sure that the channel is established beforehand because this
+    // is icky.
+    loop {
+        if state_channel.lock().unwrap().is_some() {
+            let lock = state_channel.lock().unwrap();
+            channel = lock.clone().unwrap();
+            drop(lock);
+            break;
+        }
+    }
+
     while let Some(content) = rx.recv().await {
         let event = ClipboardEvent {
             id: u32::default(),
@@ -128,9 +143,7 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
 
         // Then send the content after writing it to db
         let event = db.create_entry(event).await?;
-        let channel = app.state::<Mutex<Option<Channel<ClipboardEvent>>>>();
-        let mut lock = channel.lock().unwrap();
-        lock.as_mut().unwrap().send(event)?;
+        channel.send(event)?;
     }
 
     Ok(())
