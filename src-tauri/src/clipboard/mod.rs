@@ -2,6 +2,7 @@
 
 pub mod models;
 use crate::db::Database;
+use crate::CONFIG;
 use anyhow::Result;
 use base64::Engine;
 use chrono::Local;
@@ -26,7 +27,7 @@ impl ClipboardHandler for ClipboardListener {
             return;
         }
 
-        if self.ctx.has(ContentFormat::Text) {
+        if self.ctx.has(ContentFormat::Text) && CONFIG.lock().unwrap().capture.text {
             if let Ok(text) = self.ctx.get_text() {
                 // Reject whitespace only copy
                 if text.trim().is_empty() {
@@ -44,9 +45,10 @@ impl ClipboardHandler for ClipboardListener {
 
                 let _ = self.tx.send(CbEventContent::Text(text));
             }
-        } else if self.ctx.has(ContentFormat::Image) {
+        } else if self.ctx.has(ContentFormat::Image) && CONFIG.lock().unwrap().capture.images {
             let tx = self.tx.clone();
             let last_hash = self.last_hash.clone();
+            let max_image_size = CONFIG.lock().unwrap().max_image_size as usize;
 
             tauri::async_runtime::spawn(async move {
                 let result = tokio::task::spawn_blocking(move || -> Option<String> {
@@ -55,7 +57,7 @@ impl ClipboardHandler for ClipboardListener {
                     let png = img.to_png().ok()?;
                     let img_bytes = png.get_bytes();
 
-                    if img_bytes.len() > 5_000_000 {
+                    if img_bytes.len() > max_image_size {
                         return None;
                     }
 
@@ -77,7 +79,7 @@ impl ClipboardHandler for ClipboardListener {
                     let _ = tx.send(CbEventContent::Image(b64));
                 }
             });
-        } else if self.ctx.has(ContentFormat::Files) {
+        } else if self.ctx.has(ContentFormat::Files) && CONFIG.lock().unwrap().capture.files {
             if let Ok(paths) = self.ctx.get_files() {
                 let hash = calculate_hash(&paths);
                 let mut last = self.last_hash.lock().unwrap();
@@ -96,6 +98,7 @@ impl ClipboardHandler for ClipboardListener {
 pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
     let (tx, rx) = mpsc::unbounded_channel::<CbEventContent>();
     let app_handle = app.clone();
+
     // Spawn listnener
     std::thread::spawn(move || {
         let listener = ClipboardListener::new(tx, app);
@@ -111,6 +114,21 @@ pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
 
 async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>) -> Result<()> {
     let db = app.state::<Database>();
+    let state_channel = app.state::<Mutex<Option<Channel<ClipboardEvent>>>>();
+    let channel: Channel<ClipboardEvent>;
+
+    // Wait until the event channel is established
+    // TODO: figure out a way to make sure that the channel is established beforehand because this
+    // is icky.
+    loop {
+        if state_channel.lock().unwrap().is_some() {
+            let lock = state_channel.lock().unwrap();
+            channel = lock.clone().unwrap();
+            drop(lock);
+            break;
+        }
+    }
+
     while let Some(content) = rx.recv().await {
         let event = ClipboardEvent {
             id: u32::default(),
@@ -125,10 +143,9 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
 
         // Then send the content after writing it to db
         let event = db.create_entry(event).await?;
-        let channel = app.state::<Mutex<Option<Channel<ClipboardEvent>>>>();
-        let mut lock = channel.lock().unwrap();
-        lock.as_mut().unwrap().send(event)?;
+        channel.send(event)?;
     }
+
     Ok(())
 }
 

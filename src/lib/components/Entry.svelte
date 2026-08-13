@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { cbEventType, type clipboardEvent } from "$lib/types";
+	import { CbEventType, type ClipboardEvent } from "$lib/types";
 	import { invoke } from "@tauri-apps/api/core";
 	import { imageCache } from "$lib/cache";
 
@@ -10,7 +10,7 @@
 		onDelete,
 		onPin,
 	}: {
-		cbEvent: clipboardEvent;
+		cbEvent: ClipboardEvent;
 		active?: boolean;
 		onClick: () => void;
 		onDelete: (id: number) => void;
@@ -36,7 +36,7 @@
 
 	// Lazy loading for image data
 	$effect(() => {
-		if (cbEvent.event_type !== cbEventType.Image || !contentWrapperElement) return;
+		if (cbEvent.event_type !== CbEventType.Image || !contentWrapperElement) return;
 		const observer = new IntersectionObserver(async ([e]) => {
 			// cbEvent.id == 0 when the entry hasnt been written to the database in the backend yet.
 			// TODO(?): native id counting/tracking instead of relying on sqlite autoincrement
@@ -140,13 +140,13 @@
 	onclick={onClick}
 	aria-selected={active}>
 	<div class="content" bind:this={contentWrapperElement}>
-		{#if cbEvent.content.type == cbEventType.Text}
+		{#if cbEvent.content.type == CbEventType.Text}
 			{#if cbEvent.content.data}
 				<p data-selectable="true">{cbEvent.content.data}</p>
 			{:else}
 				<span class="content-loading-text">loading content...</span>
 			{/if}
-		{:else if cbEvent.content.type == cbEventType.Image}
+		{:else if cbEvent.content.type == CbEventType.Image}
 			{#if imageData}
 				<img
 					style="max-width: 100%; min-height: 2rem; max-height: 8rem"
@@ -155,7 +155,7 @@
 			{:else}
 				<span class="content-loading-text">loading image...</span>
 			{/if}
-		{:else if cbEvent.content.type == cbEventType.File}
+		{:else if cbEvent.content.type == CbEventType.File}
 			{#if cbEvent.content.data}
 				{#each cbEvent.content.data as filepath}
 					<span
@@ -175,7 +175,7 @@
 	</div>
 	<div class="footer">
 		<span class="details">
-			{#if cbEvent.content.type == cbEventType.Text}
+			{#if cbEvent.content.type == CbEventType.Text}
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 24 24"
@@ -187,7 +187,7 @@
 					class="contenttype-icon text-icon"
 					><path d="M12 4v16" /><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" /><path
 						d="M9 20h6" /></svg>
-			{:else if cbEvent.content.type == cbEventType.Image}
+			{:else if cbEvent.content.type == CbEventType.Image}
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 24 24"
@@ -201,7 +201,7 @@
 						cx="9"
 						cy="9"
 						r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
-			{:else if cbEvent.content.type == cbEventType.File}
+			{:else if cbEvent.content.type == CbEventType.File}
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					viewBox="0 0 24 24"

@@ -4,13 +4,15 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 mod clipboard;
 mod commands;
+mod config;
 mod db;
 
 use crate::clipboard::models::ClipboardEvent;
 use anyhow::Result;
+use config::Config;
 use db::Database;
 use std::sync::atomic::AtomicBool;
-use std::sync::Mutex;
+use std::sync::{Arc, LazyLock, Mutex};
 use std::{ffi::OsStr, fs::create_dir_all};
 use sysinfo::{ProcessRefreshKind, RefreshKind};
 use tauri::ipc::Channel;
@@ -22,7 +24,24 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
+static CONFIG: LazyLock<Arc<Mutex<Config>>> =
+    LazyLock::new(|| Arc::new(Mutex::new(Config::default())));
+
 async fn run_tauri_app(silent: bool) -> Result<()> {
+    // Configuration
+    let mut cfg_path = dirs::data_dir().expect("Failed to get config directory");
+    cfg_path.push("Squirrel");
+    if !cfg_path.exists() {
+        create_dir_all(&cfg_path)?;
+    }
+    cfg_path.push("squirrel.toml");
+    let config = Config::load(&cfg_path)?;
+    {
+        let mut lock = CONFIG.lock().unwrap();
+        *lock = config.clone();
+    }
+
+    // Database
     let mut db_url = dirs::data_dir().expect("Failed to get data directory");
     db_url.push("Squirrel");
     if !db_url.exists() {
@@ -51,7 +70,7 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
 
             // Tray icon setup
             let icon_bytes = include_bytes!("../icons/64x64.png");
-            let icon = Image::from_bytes(icon_bytes).expect("Failed to parse icon bytes");
+            let icon = Image::from_bytes(icon_bytes)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show window", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
@@ -108,7 +127,8 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
             commands::remove_entry,
             commands::get_entry_content,
             commands::set_event_channel,
-            commands::reveal_in_explorer
+            commands::reveal_in_explorer,
+            commands::get_theme
         ])
         .run(tauri::generate_context!())?;
 

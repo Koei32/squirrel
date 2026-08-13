@@ -1,5 +1,6 @@
 use crate::clipboard::models::{CbEventContent, ClipboardEvent};
 use crate::db::Database;
+use crate::CONFIG;
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use clipboard_rs::common::RustImage;
@@ -30,9 +31,12 @@ pub async fn copy_item(
         CbEventContent::Image(imgb64) => cb
             .set_image(
                 clipboard_rs::RustImageData::from_bytes(
-                    STANDARD.decode(imgb64).unwrap().as_slice(),
+                    STANDARD
+                        .decode(imgb64)
+                        .map_err(|e| e.to_string())?
+                        .as_slice(),
                 )
-                .unwrap(),
+                .map_err(|e| e.to_string())?,
             )
             .map_err(|e| e.to_string())?,
         CbEventContent::File(paths) => cb.set_files(paths).map_err(|e| e.to_string())?,
@@ -129,6 +133,7 @@ pub async fn clear_history(db: State<'_, Database>) -> Result<(), String> {
     Ok(())
 }
 
+/// Opens the system file explorer with the passed `file` focused.
 #[tauri::command]
 pub async fn reveal_in_explorer(file: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
@@ -149,4 +154,11 @@ pub async fn reveal_in_explorer(file: String) -> Result<(), String> {
     }
 
     Ok(())
+}
+
+/// Returns the app theme set by config.
+#[tauri::command]
+pub async fn get_theme() -> Result<String, String> {
+    let theme = CONFIG.lock().unwrap().theme.clone();
+    Ok(theme)
 }

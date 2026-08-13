@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 	import Entry from "../lib/components/Entry.svelte";
-	import { cbEventType, type cbEventNotice, type clipboardEvent } from "../lib/types";
+	import { CbEventType, type CbEventNotice, type ClipboardEvent } from "../lib/types";
 	import { invoke, Channel } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 	import { onMount, tick } from "svelte";
@@ -9,7 +9,7 @@
 	const window = getCurrentWindow();
 
 	// All events received from the backend
-	let cbEvents: Array<clipboardEvent> = $state([]);
+	let cbEvents: Array<ClipboardEvent> = $state([]);
 	// Entries that are actually displayed due to current search query
 	let displayedEntries: Array<Entry> = $state([]);
 
@@ -22,15 +22,15 @@
 	// Search stuff
 	let searchBar: HTMLInputElement;
 	let searchQuery = $state("");
-	let filteredCbEvents: Array<clipboardEvent> = $derived(
+	let filteredCbEvents: Array<ClipboardEvent> = $derived(
 		cbEvents
 			.filter((event) => {
 				if (!searchQuery.trim().toLowerCase()) {
 					return event.is_pinned;
 				}
-				if (event.content.type == cbEventType.Image) return false;
+				if (event.content.type == CbEventType.Image) return false;
 
-				return event.content.type == cbEventType.File
+				return event.content.type == CbEventType.File
 					? event.content.data
 							?.join()
 							.toLowerCase()
@@ -49,7 +49,7 @@
 	let noItemText = $state("no items");
 
 	// Channel to stream over content of new entries
-	const contentChannel = new Channel<clipboardEvent>();
+	const contentChannel = new Channel<ClipboardEvent>();
 	contentChannel.onmessage = async (event) => {
 		// actually garbage code
 		cbEvents.find((entry) => entry.timestamp == event.timestamp)!.id = event.id;
@@ -57,7 +57,7 @@
 	};
 
 	// Listener of backend clipboard event notifications
-	listen<cbEventNotice>("cb-copy", async (event) => {
+	listen<CbEventNotice>("cb-copy", async (event) => {
 		cbEvents.unshift({
 			...event.payload,
 			content: { type: event.payload.event_type, data: undefined },
@@ -66,7 +66,7 @@
 	});
 
 	// Channel to stream over history on launch
-	const historyChannel = new Channel<clipboardEvent>();
+	const historyChannel = new Channel<ClipboardEvent>();
 	historyChannel.onmessage = (event) => {
 		cbEvents.push(event);
 	};
@@ -255,19 +255,6 @@
 
 <style>
 	:root {
-		--bg-primary: #f6f6f6;
-		--bg-accent: #a9a9a9;
-		--bg-secondary: #eee;
-
-		--fg-primary: #0f0f0f;
-		--fg-accent: #999;
-
-		--entry-focus: #d6d6e1;
-		--entry-pinned: #fffcca;
-		--entry-pinned-focus: #dddaaf;
-
-		--black: #000; /* ehh */
-
 		font-family: system-ui;
 		font-size: 1rem;
 		color: var(--fg-primary);
@@ -347,22 +334,5 @@
 		justify-self: center;
 		font-size: 0.75rem;
 		color: var(--fg-accent);
-	}
-
-	@media (prefers-color-scheme: dark) {
-		:root {
-			--bg-primary: #0f0f0f;
-			--bg-secondary: #202020;
-			--bg-accent: #525252;
-
-			--fg-primary: #dedede;
-			--fg-accent: #828282;
-
-			--entry-focus: #39393d;
-			--entry-pinned: #565439;
-			--entry-pinned-focus: #43432c;
-
-			--black: #fff;
-		}
 	}
 </style>

@@ -1,24 +1,26 @@
-export enum cbEventType {
+export enum CbEventType {
 	Text = "Text",
 	Image = "Image",
 	File = "File",
 }
 
-export type cbEventContent =
-	| { type: cbEventType.Text; data: string | undefined }
-	| { type: cbEventType.Image; data: Uint8Array<ArrayBufferLike> | undefined } // base64 encoded
-	| { type: cbEventType.File; data: Array<string> | undefined }; // list of paths
+export type CbEventContent =
+	| { type: CbEventType.Text; data: string | undefined }
+	| { type: CbEventType.Image; data: Uint8Array<ArrayBufferLike> | undefined } // base64 encoded
+	| { type: CbEventType.File; data: Array<string> | undefined }; // list of paths
 
-export type clipboardEvent = {
+export type ClipboardEvent = {
 	id: number;
-	event_type: cbEventType;
-	content: cbEventContent;
+	event_type: CbEventType;
+	content: CbEventContent;
 	timestamp: string;
 	is_pinned: boolean;
 };
 
-export type cbEventNotice = {
+export type CbEventNotice = {
 	id: number;
-	event_type: cbEventType;
+	event_type: CbEventType;
 	timestamp: string;
 };
+
+export type Theme = "light" | "dark" | "system";
