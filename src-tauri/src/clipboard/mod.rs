@@ -27,9 +27,6 @@ impl ClipboardHandler for ClipboardListener {
             return;
         }
 
-        // TODO: maybe make the ClipboardListener hold copies of relevant config items so as to not
-        // call app.state() every time.
-
         if self.ctx.has(ContentFormat::Text) && CONFIG.lock().unwrap().capture.text {
             if let Ok(text) = self.ctx.get_text() {
                 // Reject whitespace only copy
@@ -101,6 +98,7 @@ impl ClipboardHandler for ClipboardListener {
 pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
     let (tx, rx) = mpsc::unbounded_channel::<CbEventContent>();
     let app_handle = app.clone();
+
     // Spawn listnener
     std::thread::spawn(move || {
         let listener = ClipboardListener::new(tx, app);
@@ -134,6 +132,7 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
         let mut lock = channel.lock().unwrap();
         lock.as_mut().unwrap().send(event)?;
     }
+
     Ok(())
 }
 

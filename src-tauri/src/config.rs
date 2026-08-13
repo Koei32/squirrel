@@ -49,6 +49,6 @@ impl Config {
 
 impl Default for Config {
     fn default() -> Self {
-        toml::from_str(DEFAULT_CONFIG).unwrap()
+        toml::from_str(DEFAULT_CONFIG).expect("Default config should always be valid TOML")
     }
 }

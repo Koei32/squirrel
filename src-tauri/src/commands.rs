@@ -31,9 +31,12 @@ pub async fn copy_item(
         CbEventContent::Image(imgb64) => cb
             .set_image(
                 clipboard_rs::RustImageData::from_bytes(
-                    STANDARD.decode(imgb64).unwrap().as_slice(),
+                    STANDARD
+                        .decode(imgb64)
+                        .map_err(|e| e.to_string())?
+                        .as_slice(),
                 )
-                .unwrap(),
+                .map_err(|e| e.to_string())?,
             )
             .map_err(|e| e.to_string())?,
         CbEventContent::File(paths) => cb.set_files(paths).map_err(|e| e.to_string())?,

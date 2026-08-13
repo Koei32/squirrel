@@ -28,6 +28,7 @@ static CONFIG: LazyLock<Arc<Mutex<Config>>> =
     LazyLock::new(|| Arc::new(Mutex::new(Config::default())));
 
 async fn run_tauri_app(silent: bool) -> Result<()> {
+    // Configuration
     let mut cfg_path = dirs::data_dir().expect("Failed to get config directory");
     cfg_path.push("Squirrel");
     if !cfg_path.exists() {
@@ -40,6 +41,7 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
         *lock = config.clone();
     }
 
+    // Database
     let mut db_url = dirs::data_dir().expect("Failed to get data directory");
     db_url.push("Squirrel");
     if !db_url.exists() {
@@ -68,7 +70,7 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
 
             // Tray icon setup
             let icon_bytes = include_bytes!("../icons/64x64.png");
-            let icon = Image::from_bytes(icon_bytes).expect("Failed to parse icon bytes");
+            let icon = Image::from_bytes(icon_bytes)?;
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show window", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
