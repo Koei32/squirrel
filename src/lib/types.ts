@@ -22,3 +22,11 @@ export type cbEventNotice = {
 	event_type: cbEventType;
 	timestamp: string;
 };
+
+export enum Theme {
+	Light = "light",
+	Dark = "dark",
+	System = "system",
+}
+
+// export type Theme = "light" | "dark" | "system";

@@ -255,19 +255,6 @@
 
 <style>
 	:root {
-		--bg-primary: #f6f6f6;
-		--bg-accent: #a9a9a9;
-		--bg-secondary: #eee;
-
-		--fg-primary: #0f0f0f;
-		--fg-accent: #999;
-
-		--entry-focus: #d6d6e1;
-		--entry-pinned: #fffcca;
-		--entry-pinned-focus: #dddaaf;
-
-		--black: #000; /* ehh */
-
 		font-family: system-ui;
 		font-size: 1rem;
 		color: var(--fg-primary);
@@ -347,22 +334,5 @@
 		justify-self: center;
 		font-size: 0.75rem;
 		color: var(--fg-accent);
-	}
-
-	@media (prefers-color-scheme: dark) {
-		:root {
-			--bg-primary: #0f0f0f;
-			--bg-secondary: #202020;
-			--bg-accent: #525252;
-
-			--fg-primary: #dedede;
-			--fg-accent: #828282;
-
-			--entry-focus: #39393d;
-			--entry-pinned: #565439;
-			--entry-pinned-focus: #43432c;
-
-			--black: #fff;
-		}
 	}
 </style>

@@ -125,7 +125,8 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
             commands::remove_entry,
             commands::get_entry_content,
             commands::set_event_channel,
-            commands::reveal_in_explorer
+            commands::reveal_in_explorer,
+            commands::get_theme
         ])
         .run(tauri::generate_context!())?;
 
