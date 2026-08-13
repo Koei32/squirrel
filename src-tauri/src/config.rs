@@ -22,11 +22,11 @@ pub struct Config {
     pub ignore: Vec<String>,
 
     /// Which clipboard item types to capture.
-    pub types: Types,
+    pub capture: Capture,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct Types {
+pub struct Capture {
     pub text: bool,
     pub images: bool,
     pub files: bool,
