@@ -15,7 +15,7 @@ max_image_size = 5_000_000
 ignore = []
 
 # Which clipboard item types to capture.
-[types]
+[capture]
 text = true
 images = true
 files = false
