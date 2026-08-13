@@ -28,23 +28,23 @@ static CONFIG: LazyLock<Arc<Mutex<Config>>> =
     LazyLock::new(|| Arc::new(Mutex::new(Config::default())));
 
 async fn run_tauri_app(silent: bool) -> Result<()> {
-    let mut data_dir = dirs::data_dir().expect("Failed to get data directory");
-    data_dir.push("Squirrel");
-    if !data_dir.exists() {
-        create_dir_all(&data_dir)?;
+    let mut cfg_path = dirs::data_dir().expect("Failed to get config directory");
+    cfg_path.push("Squirrel");
+    if !cfg_path.exists() {
+        create_dir_all(&cfg_path)?;
     }
-
-    let mut cfg_path = data_dir;
     cfg_path.push("squirrel.toml");
     let config = Config::load(&cfg_path)?;
-
     {
         let mut lock = CONFIG.lock().unwrap();
         *lock = config.clone();
     }
 
-    let mut db_url = cfg_path;
-    db_url.pop();
+    let mut db_url = dirs::data_dir().expect("Failed to get data directory");
+    db_url.push("Squirrel");
+    if !db_url.exists() {
+        create_dir_all(&db_url)?;
+    }
     db_url.push("data.db");
     let db = Database::new(db_url.to_str().unwrap()).await?;
 
