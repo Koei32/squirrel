@@ -21,6 +21,11 @@ use tokio::sync::mpsc::{self, UnboundedReceiver};
 
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) {
+        // Skip if we're focused on an ignored program
+        if focused_on_ignored() {
+            return;
+        }
+
         // Skip if we're supposed to while flipping the switch
         if self.app.state::<AtomicBool>().load(SeqCst) {
             self.app.state::<AtomicBool>().store(false, SeqCst);
@@ -147,6 +152,25 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
     }
 
     Ok(())
+}
+
+/// Checks whether the currently focused program is ignored by config
+pub fn focused_on_ignored() -> bool {
+    let window =
+        active_win_pos_rs::get_active_window().expect("There should always be a window focused");
+    let program_name = window
+        .process_path
+        .file_name()
+        .expect("ActiveWindow always has a path that leads to an executable")
+        .to_str()
+        .unwrap();
+
+    CONFIG
+        .lock()
+        .unwrap()
+        .ignore
+        .iter()
+        .any(|name| name == program_name)
 }
 
 /// Returns the hash of the given value
