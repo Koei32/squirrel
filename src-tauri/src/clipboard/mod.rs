@@ -3,8 +3,7 @@
 pub mod models;
 use crate::db::Database;
 use crate::CONFIG;
-use anyhow::Result;
-use base64::Engine;
+use anyhow::{Context, Result};
 use chrono::Local;
 use clipboard_rs::{
     common::RustImage, Clipboard, ClipboardContext, ClipboardHandler, ClipboardWatcher,
@@ -12,11 +11,9 @@ use clipboard_rs::{
 };
 use models::*;
 use std::hash::{DefaultHasher, Hash, Hasher};
-use std::sync::{
-    atomic::{AtomicBool, Ordering::SeqCst},
-    Mutex,
-};
-use tauri::{ipc::Channel, AppHandle, Emitter, Manager};
+use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
+use tauri::Emitter;
+use tauri::{AppHandle, Manager};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
 
 impl ClipboardHandler for ClipboardListener {
@@ -56,11 +53,11 @@ impl ClipboardHandler for ClipboardListener {
             let max_image_size = CONFIG.lock().unwrap().max_image_size as usize;
 
             tauri::async_runtime::spawn(async move {
-                let result = tokio::task::spawn_blocking(move || -> Option<String> {
+                let result = tokio::task::spawn_blocking(move || -> Option<Vec<u8>> {
                     let ctx = ClipboardContext::new().ok()?;
                     let img = ctx.get_image().ok()?;
                     let png = img.to_png().ok()?;
-                    let img_bytes = png.get_bytes();
+                    let img_bytes = png.get_bytes().to_vec();
 
                     if img_bytes.len() > max_image_size {
                         return None;
@@ -75,13 +72,12 @@ impl ClipboardHandler for ClipboardListener {
                     *last = Some(hash);
                     drop(last);
 
-                    let b64 = base64::engine::general_purpose::STANDARD.encode(img_bytes);
-                    Some(b64)
+                    Some(img_bytes)
                 })
                 .await;
 
-                if let Ok(Some(b64)) = result {
-                    let _ = tx.send(CbEventContent::Image(b64));
+                if let Ok(Some(bytes)) = result {
+                    let _ = tx.send(CbEventContent::Image(bytes));
                 }
             });
         } else if self.ctx.has(ContentFormat::Files) && CONFIG.lock().unwrap().capture.files {
@@ -119,36 +115,24 @@ pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
 
 async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>) -> Result<()> {
     let db = app.state::<Database>();
-    let state_channel = app.state::<Mutex<Option<Channel<ClipboardEvent>>>>();
-    let channel: Channel<ClipboardEvent>;
-
-    // Wait until the event channel is established
-    // TODO: figure out a way to make sure that the channel is established beforehand because this
-    // is icky.
-    loop {
-        if state_channel.lock().unwrap().is_some() {
-            let lock = state_channel.lock().unwrap();
-            channel = lock.clone().unwrap();
-            drop(lock);
-            break;
-        }
-    }
 
     while let Some(content) = rx.recv().await {
+        let timestamp = Local::now().timestamp_micros();
         let event = ClipboardEvent {
-            id: u32::default(),
+            id: timestamp,
             event_type: content.to_type(),
             content,
-            timestamp: Local::now().to_rfc3339(),
             is_pinned: false,
+            expires_at: timestamp
+                + chrono::Duration::days(CONFIG.lock().unwrap().history_ttl)
+                    .num_microseconds()
+                    .context("Config `history_ttl` is too large (UNIX timestamp overflow)")?,
         };
 
-        // Notify the frontend about the event first
-        let _ = app.emit("cb-copy", ClipboardEventNotice::from(&event));
+        // Send to frontend
+        app.emit("cb-copy", event.clone())?;
 
-        // Then send the content after writing it to db
-        let event = db.create_entry(event).await?;
-        channel.send(event)?;
+        db.create_entry(event).await?;
     }
 
     Ok(())

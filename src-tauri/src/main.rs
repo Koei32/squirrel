@@ -7,7 +7,6 @@ mod commands;
 mod config;
 mod db;
 
-use crate::clipboard::models::ClipboardEvent;
 use anyhow::Result;
 use config::Config;
 use db::Database;
@@ -15,7 +14,6 @@ use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, LazyLock, Mutex};
 use std::{ffi::OsStr, fs::create_dir_all};
 use sysinfo::{ProcessRefreshKind, RefreshKind};
-use tauri::ipc::Channel;
 use tauri::{
     image::Image,
     menu::{Menu, MenuItem},
@@ -52,9 +50,6 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
 
     // Whether or not to ignore clipboard events
     let skip_event = AtomicBool::new(false);
-
-    // Channel over which events are sent
-    let event_channel: Mutex<Option<Channel<ClipboardEvent>>> = Mutex::new(None);
 
     Builder::default()
         .setup(move |app| {
@@ -94,7 +89,6 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
             // State management
             app.manage(db);
             app.manage(skip_event);
-            app.manage(event_channel);
 
             // Global launch hotkey
             let launch_hotkey =
@@ -126,7 +120,6 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
             commands::pin_entry,
             commands::remove_entry,
             commands::get_entry_content,
-            commands::set_event_channel,
             commands::reveal_in_explorer,
             commands::get_theme
         ])

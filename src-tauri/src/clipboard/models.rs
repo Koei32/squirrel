@@ -1,3 +1,4 @@
+use base64::Engine;
 use clipboard_rs::ClipboardContext;
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
@@ -14,22 +15,12 @@ pub enum CbEventType {
     File,
 }
 
-impl CbEventType {
-    pub const fn as_str(&self) -> &'static str {
-        match self {
-            Self::Text => "text",
-            Self::Image => "image",
-            Self::File => "file",
-        }
-    }
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data")]
 pub enum CbEventContent {
     Text(String),
-    /// Base64 encoded PNG image data
-    Image(String),
+    /// PNG image bytes
+    Image(Vec<u8>),
     /// A list of file paths
     File(Vec<String>),
 }
@@ -48,7 +39,7 @@ impl From<CbEventContent> for String {
     fn from(value: CbEventContent) -> Self {
         match value {
             CbEventContent::Text(text) => text,
-            CbEventContent::Image(b64) => b64,
+            CbEventContent::Image(bytes) => base64::engine::general_purpose::STANDARD.encode(bytes),
             CbEventContent::File(file) => file.join("\0"),
         }
     }
@@ -56,29 +47,11 @@ impl From<CbEventContent> for String {
 
 #[derive(Clone, Debug, Serialize, FromRow)]
 pub struct ClipboardEvent {
-    pub id: u32,
+    pub id: i64,
     pub event_type: CbEventType,
     pub content: CbEventContent,
-    pub timestamp: String,
     pub is_pinned: bool,
-}
-
-/// The minimal payload that will be sent to the frontend. Doesn't have content.
-#[derive(Clone, Serialize)]
-pub struct ClipboardEventNotice {
-    pub id: u32,
-    pub event_type: CbEventType,
-    pub timestamp: String,
-}
-
-impl From<&ClipboardEvent> for ClipboardEventNotice {
-    fn from(value: &ClipboardEvent) -> Self {
-        Self {
-            id: value.id,
-            event_type: value.event_type,
-            timestamp: value.timestamp.clone(),
-        }
-    }
+    pub expires_at: i64,
 }
 
 pub struct ClipboardListener {
