@@ -1,6 +1,10 @@
 //! database and things like that
-use crate::clipboard::models::{CbEventContent, CbEventType, ClipboardEvent};
-use anyhow::Result;
+use crate::{
+    clipboard::models::{CbEventContent, CbEventType, ClipboardEvent},
+    CONFIG,
+};
+use anyhow::{Context, Result};
+use chrono::{Duration, Local};
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     SqlitePool,
@@ -137,13 +141,27 @@ impl Database {
         Ok(results)
     }
 
-    /// Sets the pinned status of an entry
+    /// Sets the pinned status of an entry, updating the expiry timestamp if unpinning and removing
+    /// expiry if pinning.
     pub async fn set_pinned(&self, id: i64, is_pinned: bool) -> Result<()> {
-        sqlx::query("UPDATE clipboard SET is_pinned = ? WHERE id = ?;")
+        let new_expires_at = if is_pinned {
+            None
+        } else {
+            Some(
+                Local::now().timestamp_micros()
+                    + Duration::days(CONFIG.lock().unwrap().history_ttl)
+                        .num_microseconds()
+                        .context("Config `history_ttl` is too large (UNIX timestamp overflow)")?,
+            )
+        };
+
+        sqlx::query("UPDATE clipboard SET is_pinned = ?, expires_at = ? WHERE id = ?;")
             .bind(is_pinned as u8)
+            .bind(new_expires_at)
             .bind(id)
             .execute(&self.pool)
             .await?;
+
         Ok(())
     }
 
@@ -167,7 +185,7 @@ struct EntryRow {
     pub content_text: Option<String>,
     pub content_blob: Option<Vec<u8>>,
     pub is_pinned: bool,
-    pub expires_at: i64,
+    pub expires_at: Option<i64>,
 }
 
 impl From<EntryRow> for ClipboardEvent {

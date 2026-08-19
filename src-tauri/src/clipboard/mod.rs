@@ -4,7 +4,7 @@ pub mod models;
 use crate::db::Database;
 use crate::CONFIG;
 use anyhow::{Context, Result};
-use chrono::Local;
+use chrono::{Duration, Local};
 use clipboard_rs::{
     common::RustImage, Clipboard, ClipboardContext, ClipboardHandler, ClipboardWatcher,
     ClipboardWatcherContext, ContentFormat,
@@ -123,10 +123,12 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
             event_type: content.to_type(),
             content,
             is_pinned: false,
-            expires_at: timestamp
-                + chrono::Duration::days(CONFIG.lock().unwrap().history_ttl)
-                    .num_microseconds()
-                    .context("Config `history_ttl` is too large (UNIX timestamp overflow)")?,
+            expires_at: Some(
+                timestamp
+                    + Duration::days(CONFIG.lock().unwrap().history_ttl)
+                        .num_microseconds()
+                        .context("Config `history_ttl` is too large (UNIX timestamp overflow)")?,
+            ),
         };
 
         // Send to frontend

@@ -51,7 +51,7 @@ pub struct ClipboardEvent {
     pub event_type: CbEventType,
     pub content: CbEventContent,
     pub is_pinned: bool,
-    pub expires_at: i64,
+    pub expires_at: Option<i64>,
 }
 
 pub struct ClipboardListener {
