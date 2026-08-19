@@ -33,7 +33,7 @@ impl Database {
 
         if db_version.0 == 0 {
             // Pre 1.0 schema, drop it completely. `IF EXISTS` because fresh db will have version 0.
-            sqlx::query("DROP TABLE IF EXISTS clipboard; DELETE FROM _sqlx_migrations;")
+            sqlx::query("DROP TABLE IF EXISTS clipboard; DROP TABLE IF EXISTS _sqlx_migrations;")
                 .execute(&pool)
                 .await?;
         }
