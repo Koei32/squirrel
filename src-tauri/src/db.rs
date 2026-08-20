@@ -50,13 +50,14 @@ impl Database {
             CbEventContent::Text(text) => {
                 sqlx::query_as(
                     "
-                    INSERT INTO clipboard (id, event_type, content_text, expires_at)
-                    VALUES (?, ?, ?, ?) 
+                    INSERT INTO clipboard (id, event_type, is_pinned, content_text, expires_at)
+                    VALUES (?, ?, ?, ?, ?) 
                     RETURNING *;
                     ",
                 )
                 .bind(event.id)
                 .bind(event.event_type)
+                .bind(event.is_pinned as u8)
                 .bind(&text)
                 .bind(event.expires_at)
                 .fetch_one(&self.pool)
@@ -66,12 +67,13 @@ impl Database {
             CbEventContent::Image(bytes) => {
                 sqlx::query_as(
                     "
-                    INSERT INTO clipboard (id, event_type, content_blob, expires_at)
-                    VALUES (?, ?, ?, ?) RETURNING *;
+                    INSERT INTO clipboard (id, event_type, is_pinned, content_blob, expires_at)
+                    VALUES (?, ?, ?, ?, ?) RETURNING *;
                     ",
                 )
                 .bind(event.id)
                 .bind(event.event_type)
+                .bind(event.is_pinned as u8)
                 .bind(bytes)
                 .bind(event.expires_at)
                 .fetch_one(&self.pool)
@@ -81,12 +83,13 @@ impl Database {
             CbEventContent::File(files) => {
                 sqlx::query_as(
                     "
-                    INSERT INTO clipboard (id, event_type, content_text, expires_at)
-                    VALUES (?, ?, ?, ?) RETURNING *;
+                    INSERT INTO clipboard (id, event_type, is_pinned, content_text, expires_at)
+                    VALUES (?, ?, ?, ?, ?) RETURNING *;
                     ",
                 )
                 .bind(event.id)
                 .bind(event.event_type)
+                .bind(event.is_pinned as u8)
                 .bind(files.join("\0"))
                 .bind(event.expires_at)
                 .fetch_one(&self.pool)

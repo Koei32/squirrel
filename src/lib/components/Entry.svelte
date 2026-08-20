@@ -76,7 +76,7 @@
 	 * in the backend. Also calls the UI pin function.
 	 */
 	export function handlePin() {
-		invoke("pin_entry", { id: cbEvent.id, isPinned });
+		invoke("pin_entry", { id: cbEvent.id, isPinned: !isPinned });
 		onPin(cbEvent.id);
 		if (isPinned) {
 			onClick();
@@ -123,6 +123,10 @@
 				}
 				case "Delete": {
 					handleRemove();
+					break;
+				}
+				case "h": {
+					console.log(isPinned);
 					break;
 				}
 			}
