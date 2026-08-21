@@ -62,14 +62,15 @@
 	};
 
 	/**
-	 * Invokes the clear_history command in the backend and clears all entries
+	 * Invokes the clear_history command in the backend, clearing everything but pinned entries.
 	 */
 	async function clearHistory() {
 		await invoke("clear_history").catch((r) => {
 			console.log(r);
 		});
-		cbEvents = [];
-		displayedEntries = [];
+		cbEvents = cbEvents.filter((event) => event.is_pinned);
+		// await invoke("load_history", { onEvent: historyChannel });
+
 		noItemText = "history cleared";
 		setTimeout(() => {
 			noItemText = "no items";
