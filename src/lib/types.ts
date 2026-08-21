@@ -13,14 +13,8 @@ export type ClipboardEvent = {
 	id: number;
 	event_type: CbEventType;
 	content: CbEventContent;
-	timestamp: string;
 	is_pinned: boolean;
-};
-
-export type CbEventNotice = {
-	id: number;
-	event_type: CbEventType;
-	timestamp: string;
+	expires_at: number;
 };
 
 export type Theme = "light" | "dark" | "system";

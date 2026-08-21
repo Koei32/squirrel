@@ -76,7 +76,7 @@
 	 * in the backend. Also calls the UI pin function.
 	 */
 	export function handlePin() {
-		invoke("pin_entry", { id: cbEvent.id, isPinned });
+		invoke("pin_entry", { id: cbEvent.id, isPinned: !isPinned });
 		onPin(cbEvent.id);
 		if (isPinned) {
 			onClick();
@@ -123,6 +123,10 @@
 				}
 				case "Delete": {
 					handleRemove();
+					break;
+				}
+				case "h": {
+					console.log(isPinned);
 					break;
 				}
 			}
@@ -215,7 +219,9 @@
 						d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path
 						d="M14 2v5a1 1 0 0 0 1 1h5" /></svg>
 			{/if}
-			{new Date(cbEvent.timestamp).toLocaleString()}
+
+			<!-- cbEvent.id is in micros but Date assumes millis -->
+			{new Date(cbEvent.id / 1000).toLocaleString()}
 		</span>
 		<div class="buttons">
 			<button tabindex="-1" onclick={handleCopy} title="Copy">

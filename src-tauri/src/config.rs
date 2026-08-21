@@ -10,7 +10,7 @@ pub struct Config {
     pub theme: String,
 
     /// Number of days after which a clipboard history item is automatically deleted (unless pinned).
-    pub history_ttl: u32,
+    pub history_ttl: i64,
 
     /// Whether the clipboard history persists between app launches.
     pub persistence: bool,

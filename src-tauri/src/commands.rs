@@ -1,13 +1,10 @@
 use crate::clipboard::models::{CbEventContent, ClipboardEvent};
 use crate::db::Database;
 use crate::CONFIG;
-use base64::engine::general_purpose::STANDARD;
-use base64::Engine;
 use clipboard_rs::common::RustImage;
 use clipboard_rs::{Clipboard, ClipboardContext};
 use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
-use std::sync::Mutex;
 use std::time::Duration;
 use tauri::{ipc::Channel, State};
 // TODO: make a custom error type to return from tauri commands so that i dont
@@ -18,7 +15,7 @@ use tauri::{ipc::Channel, State};
 pub async fn copy_item(
     db: State<'_, Database>,
     skip: State<'_, AtomicBool>,
-    id: u32,
+    id: i64,
 ) -> Result<(), String> {
     let content = db.get_entry_content(id);
     let cb = ClipboardContext::new().map_err(|e| e.to_string())?;
@@ -28,16 +25,8 @@ pub async fn copy_item(
 
     match content.await.map_err(|e| e.to_string())? {
         CbEventContent::Text(text) => cb.set_text(text).map_err(|e| e.to_string())?,
-        CbEventContent::Image(imgb64) => cb
-            .set_image(
-                clipboard_rs::RustImageData::from_bytes(
-                    STANDARD
-                        .decode(imgb64)
-                        .map_err(|e| e.to_string())?
-                        .as_slice(),
-                )
-                .map_err(|e| e.to_string())?,
-            )
+        CbEventContent::Image(bytes) => cb
+            .set_image(clipboard_rs::RustImageData::from_bytes(&bytes).map_err(|e| e.to_string())?)
             .map_err(|e| e.to_string())?,
         CbEventContent::File(paths) => cb.set_files(paths).map_err(|e| e.to_string())?,
     };
@@ -50,7 +39,7 @@ pub async fn copy_item(
 pub async fn paste_item(
     db: State<'_, Database>,
     skip: State<'_, AtomicBool>,
-    id: u32,
+    id: i64,
 ) -> Result<(), String> {
     copy_item(db, skip, id).await?;
     let mut keyboard = Enigo::new(&Settings::default()).map_err(|e| e.to_string())?;
@@ -79,7 +68,7 @@ pub async fn paste_item(
 }
 
 #[tauri::command(async)]
-pub async fn pin_entry(db: State<'_, Database>, id: u32, is_pinned: bool) -> Result<(), String> {
+pub async fn pin_entry(db: State<'_, Database>, id: i64, is_pinned: bool) -> Result<(), String> {
     db.set_pinned(id, is_pinned)
         .await
         .map_err(|e| e.to_string())?;
@@ -88,26 +77,14 @@ pub async fn pin_entry(db: State<'_, Database>, id: u32, is_pinned: bool) -> Res
 
 /// Removes the entry associated with the given id.
 #[tauri::command(async)]
-pub async fn remove_entry(db: State<'_, Database>, id: u32) -> Result<(), String> {
+pub async fn remove_entry(db: State<'_, Database>, id: i64) -> Result<(), String> {
     db.remove_entry(id).await.map_err(|e| e.to_string())?;
-    Ok(())
-}
-
-/// Command to obtain the event channel from the frontend
-#[tauri::command(async)]
-pub async fn set_event_channel(
-    event_channel: State<'_, Mutex<Option<Channel<ClipboardEvent>>>>,
-    channel: Channel<ClipboardEvent>,
-) -> Result<(), String> {
-    let mut lock = event_channel.lock().map_err(|e| e.to_string())?;
-    *lock = Some(channel);
-    drop(lock);
     Ok(())
 }
 
 /// Returns the content of the entry associated with the given id
 #[tauri::command(async)]
-pub async fn get_entry_content(db: State<'_, Database>, id: u32) -> Result<String, String> {
+pub async fn get_entry_content(db: State<'_, Database>, id: i64) -> Result<String, String> {
     let content = db.get_entry_content(id).await.map_err(|e| e.to_string())?;
     Ok(content.into())
 }
@@ -121,7 +98,7 @@ pub async fn load_history(
 ) -> Result<(), String> {
     let events = db.get_entries().await.map_err(|e| e.to_string())?;
     for event in events {
-        let _ = on_event.send(event.clone());
+        let _ = on_event.send(event);
     }
     Ok(())
 }
