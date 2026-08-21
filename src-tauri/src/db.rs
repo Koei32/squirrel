@@ -144,8 +144,8 @@ impl Database {
         Ok(results)
     }
 
-    /// Sets the pinned status of an entry, updating the expiry timestamp if unpinning and removing
-    /// expiry if pinning.
+    /// Sets the pinned status of an entry, updating the expires_at to `now + ttl` if unpinning, and
+    /// nulling it if pinning.
     pub async fn set_pinned(&self, id: i64, is_pinned: bool) -> Result<()> {
         let new_expires_at = if is_pinned {
             None
@@ -162,6 +162,16 @@ impl Database {
             .bind(is_pinned as u8)
             .bind(new_expires_at)
             .bind(id)
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Clears expired entries from the database.
+    pub async fn remove_expired(&self) -> Result<()> {
+        sqlx::query("DELETE FROM clipboard WHERE expires_at <= ?;")
+            .bind(Local::now().timestamp_micros())
             .execute(&self.pool)
             .await?;
 

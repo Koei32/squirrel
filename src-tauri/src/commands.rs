@@ -89,14 +89,16 @@ pub async fn get_entry_content(db: State<'_, Database>, id: i64) -> Result<Strin
     Ok(content.into())
 }
 
-/// Sends the stored clipboard history over the provided channel, most recent
-/// entries first.
+/// Sends the stored clipboard history over the provided channel, most recent entries first. This
+/// will also cause removal of any expired entries.
 #[tauri::command]
 pub async fn load_history(
     db: State<'_, Database>,
     on_event: Channel<ClipboardEvent>,
 ) -> Result<(), String> {
+    db.remove_expired().await.map_err(|e| e.to_string())?;
     let events = db.get_entries().await.map_err(|e| e.to_string())?;
+
     for event in events {
         let _ = on_event.send(event);
     }
