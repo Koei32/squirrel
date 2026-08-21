@@ -178,15 +178,13 @@ impl Database {
         Ok(())
     }
 
-    /// Clears the whole database. (!)
-    pub async fn clear_entries(&self) -> Result<()> {
-        sqlx::query(
-            "
-            DELETE FROM clipboard;
-        ",
-        )
-        .execute(&self.pool)
-        .await?;
+    /// Clears all entries from the database, preserving pins unless `clear_pinned` says otherwise.
+    pub async fn clear_entries(&self, clear_pinned: bool) -> Result<()> {
+        sqlx::query("DELETE FROM clipboard WHERE is_pinned = FALSE OR ?;")
+            .bind(clear_pinned)
+            .execute(&self.pool)
+            .await?;
+
         Ok(())
     }
 }

@@ -108,7 +108,7 @@ pub async fn load_history(
 /// Clears the entire clipboard history, permanently.
 #[tauri::command(async)]
 pub async fn clear_history(db: State<'_, Database>) -> Result<(), String> {
-    db.clear_entries().await.map_err(|e| e.to_string())?;
+    db.clear_entries(false).await.map_err(|e| e.to_string())?;
     Ok(())
 }
 
