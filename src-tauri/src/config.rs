@@ -6,30 +6,42 @@ const DEFAULT_CONFIG: &str = include_str!("../../default.toml");
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
-    /// App theme. Valid values are "dark", "light" and "system".
-    pub theme: String,
-
-    /// Number of days after which a clipboard history item is automatically deleted (unless pinned).
-    pub history_ttl: i64,
-
-    /// Whether the clipboard history persists between app launches.
-    pub persistence: bool,
-
-    /// Max image size (in bytes) Squirrel should capture.
-    pub max_image_size: u32,
-
-    /// Ignore clipboard events when any of the specified programs are focused.
-    pub ignore: Vec<String>,
-
-    /// Which clipboard item types to capture.
+    pub app: App,
+    pub history: History,
     pub capture: Capture,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
+pub struct App {
+    /// App theme. Valid values are "dark", "light" and "system".
+    pub theme: String,
+
+    /// Ignore clipboard events when any of the specified programs are focused.
+    pub ignore: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct History {
+    /// Number of days after which a clipboard history item is automatically deleted (unless pinned).
+    pub ttl: i64,
+
+    /// Whether the clipboard history persists between app launches.
+    pub persistence: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Capture {
+    /// Whether to capture text copy events.
     pub text: bool,
+
+    /// Whether to capture image copy events.
     pub images: bool,
+
+    /// Whether to capture file copy events.
     pub files: bool,
+
+    /// Max image size (in bytes) Squirrel should capture.
+    pub max_image_size: u32,
 }
 
 impl Config {

@@ -152,7 +152,7 @@ impl Database {
         } else {
             Some(
                 Local::now().timestamp_micros()
-                    + Duration::days(CONFIG.lock().unwrap().history_ttl)
+                    + Duration::days(CONFIG.lock().unwrap().history.ttl)
                         .num_microseconds()
                         .context("Config `history_ttl` is too large (UNIX timestamp overflow)")?,
             )

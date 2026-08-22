@@ -50,7 +50,7 @@ impl ClipboardHandler for ClipboardListener {
         } else if self.ctx.has(ContentFormat::Image) && CONFIG.lock().unwrap().capture.images {
             let tx = self.tx.clone();
             let last_hash = self.last_hash.clone();
-            let max_image_size = CONFIG.lock().unwrap().max_image_size as usize;
+            let max_image_size = CONFIG.lock().unwrap().capture.max_image_size as usize;
 
             tauri::async_runtime::spawn(async move {
                 let result = tokio::task::spawn_blocking(move || -> Option<Vec<u8>> {
@@ -125,7 +125,7 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
             is_pinned: false,
             expires_at: Some(
                 timestamp
-                    + Duration::days(CONFIG.lock().unwrap().history_ttl)
+                    + Duration::days(CONFIG.lock().unwrap().history.ttl)
                         .num_microseconds()
                         .context("Config `history_ttl` is too large (UNIX timestamp overflow)")?,
             ),
@@ -154,6 +154,7 @@ pub fn focused_on_ignored() -> bool {
     CONFIG
         .lock()
         .unwrap()
+        .app
         .ignore
         .iter()
         .any(|name| name == program_name)

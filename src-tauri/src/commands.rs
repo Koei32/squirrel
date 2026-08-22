@@ -138,6 +138,6 @@ pub async fn reveal_in_explorer(file: String) -> Result<(), String> {
 /// Returns the app theme set by config.
 #[tauri::command]
 pub async fn get_theme() -> Result<String, String> {
-    let theme = CONFIG.lock().unwrap().theme.clone();
+    let theme = CONFIG.lock().unwrap().app.theme.clone();
     Ok(theme)
 }
