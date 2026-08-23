@@ -10,7 +10,7 @@ ignore = []
 # Entry history and storage related config
 [history]
 # Number of days after which a clipboard history item is automatically deleted (unless pinned).
-history_ttl = 30
+ttl = 30
 # Whether the clipboard history persists between app launches.
 persistence = true
 
