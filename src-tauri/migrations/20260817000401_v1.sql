@@ -12,5 +12,6 @@ CREATE TABLE clipboard (
     is_pinned INTEGER NOT NULL CHECK (is_pinned IN (0, 1)) DEFAULT 0,
     content_text TEXT, -- for text and files
     content_blob BLOB, -- for images
-    expires_at INTEGER
+    expires_at INTEGER,
+    is_persistent INTEGER NOT NULL CHECK (is_pinned IN (0, 1)) DEFAULT 1
 ) STRICT;
