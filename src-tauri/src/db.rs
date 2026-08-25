@@ -46,12 +46,14 @@ impl Database {
     /// Inserts clipboard event content into the database, returning the entry on success or an
     /// error on failure to insert.
     pub async fn create_entry(&self, event: ClipboardEvent) -> Result<ClipboardEvent> {
+        let persistence = CONFIG.lock().unwrap().history.persistence;
         let entry: EntryRow = match event.content {
             CbEventContent::Text(text) => {
                 sqlx::query_as(
                     "
-                    INSERT INTO clipboard (id, event_type, is_pinned, content_text, expires_at)
-                    VALUES (?, ?, ?, ?, ?) 
+                    INSERT INTO
+                    clipboard (id, event_type, is_pinned, content_text, expires_at, is_persistent)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     RETURNING *;
                     ",
                 )
@@ -60,6 +62,7 @@ impl Database {
                 .bind(event.is_pinned as u8)
                 .bind(&text)
                 .bind(event.expires_at)
+                .bind(persistence)
                 .fetch_one(&self.pool)
                 .await?
             }
@@ -67,8 +70,10 @@ impl Database {
             CbEventContent::Image(bytes) => {
                 sqlx::query_as(
                     "
-                    INSERT INTO clipboard (id, event_type, is_pinned, content_blob, expires_at)
-                    VALUES (?, ?, ?, ?, ?) RETURNING *;
+                    INSERT INTO
+                    clipboard (id, event_type, is_pinned, content_blob, expires_at, is_persistent)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    RETURNING *;
                     ",
                 )
                 .bind(event.id)
@@ -76,6 +81,7 @@ impl Database {
                 .bind(event.is_pinned as u8)
                 .bind(bytes)
                 .bind(event.expires_at)
+                .bind(persistence)
                 .fetch_one(&self.pool)
                 .await?
             }
@@ -83,8 +89,10 @@ impl Database {
             CbEventContent::File(files) => {
                 sqlx::query_as(
                     "
-                    INSERT INTO clipboard (id, event_type, is_pinned, content_text, expires_at)
-                    VALUES (?, ?, ?, ?, ?) RETURNING *;
+                    INSERT INTO
+                    clipboard (id, event_type, is_pinned, content_text, expires_at, is_persistent)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    RETURNING *;
                     ",
                 )
                 .bind(event.id)
@@ -92,6 +100,7 @@ impl Database {
                 .bind(event.is_pinned as u8)
                 .bind(files.join("\0"))
                 .bind(event.expires_at)
+                .bind(persistence)
                 .fetch_one(&self.pool)
                 .await?
             }
@@ -133,7 +142,8 @@ impl Database {
                 content_text,
                 NULL as content_blob,
                 is_pinned,
-                expires_at
+                expires_at,
+                is_persistent
                 FROM clipboard 
                 ORDER BY id DESC;
             ",
@@ -147,6 +157,9 @@ impl Database {
     /// Sets the pinned status of an entry, updating the expires_at to `now + ttl` if unpinning, and
     /// nulling it if pinning.
     pub async fn set_pinned(&self, id: i64, is_pinned: bool) -> Result<()> {
+        // TODO: make the config reactive and impl getter functions on it
+        let persistent = CONFIG.lock().unwrap().history.persistence;
+
         let new_expires_at = if is_pinned {
             None
         } else {
@@ -158,19 +171,22 @@ impl Database {
             )
         };
 
-        sqlx::query("UPDATE clipboard SET is_pinned = ?, expires_at = ? WHERE id = ?;")
-            .bind(is_pinned as u8)
-            .bind(new_expires_at)
-            .bind(id)
-            .execute(&self.pool)
-            .await?;
+        sqlx::query(
+            "UPDATE clipboard SET is_pinned = ?, expires_at = ?, is_persistent = ? WHERE id = ?;",
+        )
+        .bind(is_pinned as u8)
+        .bind(new_expires_at)
+        .bind((is_pinned || persistent) as u8)
+        .bind(id)
+        .execute(&self.pool)
+        .await?;
 
         Ok(())
     }
 
     /// Clears expired entries from the database.
     pub async fn remove_expired(&self) -> Result<()> {
-        sqlx::query("DELETE FROM clipboard WHERE expires_at <= ?;")
+        sqlx::query("DELETE FROM clipboard WHERE expires_at <= ? OR is_persistent = FALSE;")
             .bind(Local::now().timestamp_micros())
             .execute(&self.pool)
             .await?;
