@@ -142,17 +142,17 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
             is_pinned: false,
             expires_at: Some(
                 timestamp
-                + Duration::days(CONFIG.lock().unwrap().history.ttl)
-                .num_microseconds()
-                .context("Config `history_ttl` is too large (UNIX timestamp overflow)")?,
+                    + Duration::days(CONFIG.lock().unwrap().history.ttl)
+                        .num_microseconds()
+                        .context("Config `history_ttl` is too large (UNIX timestamp overflow)")?,
             ),
         };
         debug!(id = timestamp, "Constructed ClipboardEvent");
-        
+
         // Send to frontend
         app.emit("cb-copy", event.clone())?;
         debug!(id = timestamp, "Sent to frontend");
-        
+
         db.create_entry(event).await?;
         debug!(id = timestamp, "Wrote to db");
     }
