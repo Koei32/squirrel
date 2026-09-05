@@ -15,17 +15,20 @@ use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
 use tauri::Emitter;
 use tauri::{AppHandle, Manager};
 use tokio::sync::mpsc::{self, UnboundedReceiver};
+use tracing::{debug, trace};
 
 impl ClipboardHandler for ClipboardListener {
     fn on_clipboard_change(&mut self) {
         // Skip if we're focused on an ignored program
         if focused_on_ignored() {
+            trace!("Event ignored because focused on ignored program");
             return;
         }
 
         // Skip if we're supposed to while flipping the switch
         if self.app.state::<AtomicBool>().load(SeqCst) {
             self.app.state::<AtomicBool>().store(false, SeqCst);
+            trace!("Event skipped");
             return;
         }
 
@@ -35,11 +38,13 @@ impl ClipboardHandler for ClipboardListener {
                 if text.trim().is_empty() {
                     return;
                 }
+                debug!(len = text.len(), "Text copy event detected");
 
                 // Reject consecutive duplicate copies
                 let hash = calculate_hash(&text);
                 let mut last = self.last_hash.lock().unwrap();
                 if Some(hash) == *last {
+                    debug!("Skipped duplicate event");
                     return;
                 }
                 *last = Some(hash);
@@ -59,7 +64,14 @@ impl ClipboardHandler for ClipboardListener {
                     let png = img.to_png().ok()?;
                     let img_bytes = png.get_bytes().to_vec();
 
+                    debug!(size = img_bytes.len(), "Image copy event detected");
+
                     if img_bytes.len() > max_image_size {
+                        debug!(
+                            max_image_size,
+                            img_size = img_bytes.len(),
+                            "Skipped image because it is larger than max_image_size"
+                        );
                         return None;
                     }
 
@@ -67,6 +79,7 @@ impl ClipboardHandler for ClipboardListener {
 
                     let mut last = last_hash.lock().unwrap();
                     if Some(hash) == *last {
+                        debug!("Skipped duplicate event");
                         return None;
                     }
                     *last = Some(hash);
@@ -82,6 +95,8 @@ impl ClipboardHandler for ClipboardListener {
             });
         } else if self.ctx.has(ContentFormat::Files) && CONFIG.lock().unwrap().capture.files {
             if let Ok(paths) = self.ctx.get_files() {
+                debug!(num_files = paths.len(), "File(s) copy event detected");
+
                 let hash = calculate_hash(&paths);
                 let mut last = self.last_hash.lock().unwrap();
                 if Some(hash) == *last {
@@ -107,8 +122,10 @@ pub fn start_clipboard_listener(app: AppHandle) -> Result<()> {
             ClipboardWatcherContext::new().expect("Failed to create cb watcher context");
         watcher.add_handler(listener).start_watch();
     });
+    debug!("Spawned clipboard listener thread");
 
     // Spawn the event emitter
+    debug!("Spawning event emitter task...");
     tokio::spawn(start_emitter(app_handle, rx));
     Ok(())
 }
@@ -125,16 +142,19 @@ async fn start_emitter(app: AppHandle, mut rx: UnboundedReceiver<CbEventContent>
             is_pinned: false,
             expires_at: Some(
                 timestamp
-                    + Duration::days(CONFIG.lock().unwrap().history.ttl)
-                        .num_microseconds()
-                        .context("Config `history_ttl` is too large (UNIX timestamp overflow)")?,
+                + Duration::days(CONFIG.lock().unwrap().history.ttl)
+                .num_microseconds()
+                .context("Config `history_ttl` is too large (UNIX timestamp overflow)")?,
             ),
         };
-
+        debug!(id = timestamp, "Constructed ClipboardEvent");
+        
         // Send to frontend
         app.emit("cb-copy", event.clone())?;
-
+        debug!(id = timestamp, "Sent to frontend");
+        
         db.create_entry(event).await?;
+        debug!(id = timestamp, "Wrote to db");
     }
 
     Ok(())

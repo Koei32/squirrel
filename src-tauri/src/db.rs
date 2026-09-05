@@ -5,11 +5,13 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use chrono::{Duration, Local};
+use sqlx::ConnectOptions;
 use sqlx::{
     sqlite::{SqliteConnectOptions, SqlitePoolOptions},
     SqlitePool,
 };
 use std::str::FromStr;
+use tracing::{info, warn};
 
 #[allow(dead_code)]
 const CURRENT_VERSION: i64 = 1;
@@ -24,7 +26,10 @@ impl Database {
     /// data in the database at the passed URL if one exists _and_ is of an unsupported schema
     /// version.
     pub async fn new(url: &str) -> Result<Self> {
-        let options = SqliteConnectOptions::from_str(url)?.create_if_missing(true);
+        let options = SqliteConnectOptions::from_str(url)?
+            .create_if_missing(true)
+            .log_statements(log::LevelFilter::Off)
+            .log_slow_statements(log::LevelFilter::Warn, std::time::Duration::from_secs(1));
         let pool = SqlitePoolOptions::new().connect_with(options).await?;
 
         let db_version: (i32,) = sqlx::query_as("PRAGMA user_version;")
@@ -33,12 +38,14 @@ impl Database {
 
         if db_version.0 == 0 {
             // Pre 1.0 schema, drop it completely. `IF EXISTS` because fresh db will have version 0.
+            warn!("Found pre v1 schema in DB, wiping completely...");
             sqlx::query("DROP TABLE IF EXISTS clipboard; DROP TABLE IF EXISTS _sqlx_migrations;")
                 .execute(&pool)
                 .await?;
         }
 
         sqlx::migrate!("./migrations").run(&pool).await?;
+        info!("DB migrations complete");
 
         Ok(Self { pool })
     }
@@ -186,10 +193,14 @@ impl Database {
 
     /// Clears expired entries from the database.
     pub async fn remove_expired(&self) -> Result<()> {
-        sqlx::query("DELETE FROM clipboard WHERE expires_at <= ? OR is_persistent = FALSE;")
-            .bind(Local::now().timestamp_micros())
-            .execute(&self.pool)
-            .await?;
+        let deleted: Vec<EntryRow> = sqlx::query_as(
+            "DELETE FROM clipboard WHERE expires_at <= ? OR is_persistent = FALSE RETURNING *;",
+        )
+        .bind(Local::now().timestamp_micros())
+        .fetch_all(&self.pool)
+        .await?;
+
+        info!(del_count = deleted.len(), "Cleared expired entries");
 
         Ok(())
     }

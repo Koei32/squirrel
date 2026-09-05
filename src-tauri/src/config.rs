@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
+use tracing::info;
 
 const DEFAULT_CONFIG: &str = include_str!("../../default.toml");
 
@@ -52,6 +53,7 @@ impl Config {
                 Ok(toml::from_str(&config).with_context(|| "Invalid configuration file")?)
             }
             Err(_) => {
+                info!("No config found, creating default config file.");
                 std::fs::write(path, DEFAULT_CONFIG)?;
                 Ok(Self::default())
             }
