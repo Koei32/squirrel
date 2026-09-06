@@ -1,6 +1,8 @@
 <script lang="ts">
-	import type { clipboardEvent } from "$lib/types";
+	import { CbEventType, type ClipboardEvent } from "$lib/types";
 	import { invoke } from "@tauri-apps/api/core";
+	import { imageCache } from "$lib/cache";
+
 	const {
 		cbEvent,
 		active = false,
@@ -8,7 +10,7 @@
 		onDelete,
 		onPin,
 	}: {
-		cbEvent: clipboardEvent;
+		cbEvent: ClipboardEvent;
 		active?: boolean;
 		onClick: () => void;
 		onDelete: (id: number) => void;
@@ -27,12 +29,32 @@
 	let isPinned = $derived(cbEvent.is_pinned);
 	// This element
 	let element: HTMLElement | null = $state(null);
+	// Wrapper around this entry's content
+	let contentWrapperElement: HTMLDivElement | null = $state(null);
+	// If the entry is of the image type
+	let imageData: string | null = $state(null);
+
+	// Lazy loading for image data
+	$effect(() => {
+		if (cbEvent.event_type !== CbEventType.Image || !contentWrapperElement) return;
+		const observer = new IntersectionObserver(async ([e]) => {
+			// cbEvent.id == 0 when the entry hasnt been written to the database in the backend yet.
+			// TODO(?): native id counting/tracking instead of relying on sqlite autoincrement
+			if (e.isIntersecting && !imageData && cbEvent.id !== 0) {
+				imageData = await imageCache.get(cbEvent.id);
+				observer.disconnect();
+			}
+		});
+
+		observer.observe(contentWrapperElement);
+		return () => observer.disconnect();
+	});
 
 	/**
-	 * Focuses this element
+	 * Focuses this element.
 	 */
 	export function focusElement() {
-		// element always exists
+		// non-null assertion: Element always exists
 		element!.focus();
 	}
 
@@ -51,10 +73,10 @@
 
 	/**
 	 * Sets the pinned state of the Entry and invokes the `pin_entry` command
-	 * in the backend.
+	 * in the backend. Also calls the UI pin function.
 	 */
 	export function handlePin() {
-		invoke("pin_entry", { id: cbEvent.id, isPinned });
+		invoke("pin_entry", { id: cbEvent.id, isPinned: !isPinned });
 		onPin(cbEvent.id);
 		if (isPinned) {
 			onClick();
@@ -103,6 +125,10 @@
 					handleRemove();
 					break;
 				}
+				case "h": {
+					console.log(isPinned);
+					break;
+				}
 			}
 		}
 	}
@@ -117,21 +143,91 @@
 	role="option"
 	onclick={onClick}
 	aria-selected={active}>
-	<div class="content">
-		<p data-selectable="true">
-			{cbEvent.content}
-		</p>
+	<div class="content" bind:this={contentWrapperElement}>
+		{#if cbEvent.content.type == CbEventType.Text}
+			{#if cbEvent.content.data}
+				<p data-selectable="true">{cbEvent.content.data}</p>
+			{:else}
+				<span class="content-loading-text">loading content...</span>
+			{/if}
+		{:else if cbEvent.content.type == CbEventType.Image}
+			{#if imageData}
+				<img
+					style="max-width: 100%; min-height: 2rem; max-height: 8rem"
+					src={`data:image/png;base64,${imageData}`}
+					alt="clipboard" />
+			{:else}
+				<span class="content-loading-text">loading image...</span>
+			{/if}
+		{:else if cbEvent.content.type == CbEventType.File}
+			{#if cbEvent.content.data}
+				{#each cbEvent.content.data as filepath}
+					<span
+						role="button"
+						tabindex="-1"
+						class="filepath"
+						onkeydown={() => {}}
+						onclick={() => {
+							invoke("reveal_in_explorer", { file: filepath });
+						}}>{filepath}</span>
+					<br />
+				{/each}
+			{:else}
+				<span class="content-loading-text">loading files...</span>
+			{/if}
+		{/if}
 	</div>
 	<div class="footer">
-		<span class="time">{new Date(cbEvent.timestamp).toLocaleString()}</span>
+		<span class="details">
+			{#if cbEvent.content.type == CbEventType.Text}
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="4"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="contenttype-icon text-icon"
+					><path d="M12 4v16" /><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2" /><path
+						d="M9 20h6" /></svg>
+			{:else if cbEvent.content.type == CbEventType.Image}
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="3"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="contenttype-icon image-icon"
+					><rect width="18" height="18" x="3" y="3" rx="2" ry="2" /><circle
+						cx="9"
+						cy="9"
+						r="2" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /></svg>
+			{:else if cbEvent.content.type == CbEventType.File}
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="3"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					class="contenttype-icon file-icon"
+					><path
+						d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z" /><path
+						d="M14 2v5a1 1 0 0 0 1 1h5" /></svg>
+			{/if}
+
+			<!-- cbEvent.id is in micros but Date assumes millis -->
+			{new Date(cbEvent.id / 1000).toLocaleString()}
+		</span>
 		<div class="buttons">
-			<!-- Icons from https://lucide.dev -->
-			<button onclick={handleCopy} title="Copy">
+			<button tabindex="-1" onclick={handleCopy} title="Copy">
 				{#if isCopied}
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						width="24"
-						height="24"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
@@ -145,8 +241,6 @@
 				{:else}
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						width="24"
-						height="24"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
@@ -159,15 +253,9 @@
 					</svg>
 				{/if}
 			</button>
-			<button
-				onclick={() => {
-					handlePin();
-				}}
-				title={isPinned ? "Unpin" : "Pin"}>
+			<button tabindex="-1" onclick={handlePin} title={isPinned ? "Unpin" : "Pin"}>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -179,11 +267,9 @@
 						d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
 				</svg>
 			</button>
-			<button onclick={handleRemove} title="Delete">
+			<button tabindex="-1" onclick={handleRemove} title="Delete">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					width="24"
-					height="24"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
@@ -236,6 +322,11 @@
 		flex-grow: 1;
 	}
 
+	.content-loading-text {
+		font-size: 0.75rem;
+		color: var(--bg-accent);
+	}
+
 	.footer {
 		margin-top: 0.5rem;
 		height: 1rem;
@@ -244,10 +335,23 @@
 		align-items: center;
 	}
 
-	.time {
+	.filepath {
+		text-decoration: underline;
+		cursor: pointer;
+	}
+
+	.details {
 		font-family: monospace;
+		display: flex;
 		font-size: 0.6rem;
 		color: var(--fg-accent);
+	}
+
+	.contenttype-icon {
+		height: 0.7rem;
+		justify-self: center;
+		align-self: center;
+		margin-right: 0.25rem;
 	}
 
 	p {

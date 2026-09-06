@@ -1,0 +1,23 @@
+# General app configuration
+[app]
+# App theme. Valid values are "dark", "light" and "system".
+theme = "system"
+# Ignore clipboard events when any of the specified programs are focused.
+# e.g. ["foo.exe", "bar.exe"]
+ignore = []
+
+
+# Entry history and storage related config
+[history]
+# Number of days after which a clipboard history item is automatically deleted (unless pinned).
+ttl = 30
+# Whether the clipboard history persists between app launches.
+persistence = true
+
+# Event capturing specific options
+[capture]
+text = true
+images = true
+files = false
+# Max image size (in bytes) Squirrel should capture.
+max_image_size = 10_000_000

@@ -2,7 +2,23 @@
 	import { onMount } from "svelte";
 	import Titlebar from "$lib/components/Titlebar.svelte";
 	import "../app.css";
+	import { invoke } from "@tauri-apps/api/core";
+	import type { Theme } from "$lib/types";
 	let { children } = $props();
+
+	let theme: Theme = $state("light");
+
+	/**
+	 * Gets the theme from the backend config and applies it.
+	 */
+	async function setTheme() {
+		theme = await invoke("get_theme");
+		if (theme == "system") {
+			document.documentElement.removeAttribute("data-theme");
+		} else {
+			document.documentElement.setAttribute("data-theme", theme);
+		}
+	}
 
 	// Deselect everything when clicked anywhere except data-selectable="true" elements
 	function handleDeselectClick(event: MouseEvent): void {
@@ -16,6 +32,8 @@
 	}
 
 	onMount(() => {
+		setTheme();
+
 		window.addEventListener("click", handleDeselectClick);
 		return () => window.removeEventListener("click", handleDeselectClick);
 	});

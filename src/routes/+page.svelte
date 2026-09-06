@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 	import Entry from "../lib/components/Entry.svelte";
-	import type { cbEventNotice, clipboardEvent } from "../lib/types";
-	import { readText } from "@tauri-apps/plugin-clipboard-manager";
+	import { CbEventType, type ClipboardEvent } from "../lib/types";
 	import { invoke, Channel } from "@tauri-apps/api/core";
 	import { getCurrentWindow } from "@tauri-apps/api/window";
 	import { onMount, tick } from "svelte";
-	import { register } from "@tauri-apps/plugin-global-shortcut";
 
 	const window = getCurrentWindow();
 
 	// All events received from the backend
-	let cbEvents: Array<clipboardEvent> = $state([]);
+	let cbEvents: Array<ClipboardEvent> = $state([]);
 	// Entries that are actually displayed due to current search query
 	let displayedEntries: Array<Entry> = $state([]);
 
@@ -24,49 +22,55 @@
 	// Search stuff
 	let searchBar: HTMLInputElement;
 	let searchQuery = $state("");
-	let filteredCbEvents: Array<clipboardEvent> = $derived(
+	let filteredCbEvents: Array<ClipboardEvent> = $derived(
 		cbEvents
-			.filter(
-				(event) =>
-					event.content.toLowerCase().includes(searchQuery.trim().toLowerCase()) &&
-					event.is_pinned,
-			)
+			.filter((event) => {
+				if (!searchQuery.trim().toLowerCase()) {
+					return event.is_pinned;
+				}
+				if (event.content.type == CbEventType.Image) return false;
+
+				return event.content.type == CbEventType.File
+					? event.content.data
+							?.join()
+							.toLowerCase()
+							.includes(searchQuery.trim().toLowerCase())
+					: event.content.data?.toLowerCase().includes(searchQuery.trim().toLowerCase());
+			})
 			.concat(
-				cbEvents.filter(
-					(event) =>
-						event.content.toLowerCase().includes(searchQuery.trim().toLowerCase()) &&
-						!event.is_pinned,
-				),
+				cbEvents.filter((event) => {
+					if (!searchQuery.trim().toLowerCase()) {
+						return !event.is_pinned;
+					}
+				}),
 			),
 	);
 
 	let noItemText = $state("no items");
 
-	// Main listener of backend events
-	listen<cbEventNotice>("cb-text-copy", async (event) => {
-		const text = readText();
+	// Listener of backend clipboard events
+	listen<ClipboardEvent>("cb-copy", async (event) => {
 		cbEvents.unshift({
 			...event.payload,
-			content: await text,
-			is_pinned: false,
 		});
 	});
 
 	// Channel to stream over history on launch
-	const historyChannel = new Channel<clipboardEvent>();
+	const historyChannel = new Channel<ClipboardEvent>();
 	historyChannel.onmessage = (event) => {
 		cbEvents.push(event);
 	};
 
 	/**
-	 * Invokes the clear_history command in the backend and clears all entries
+	 * Invokes the clear_history command in the backend, clearing everything but pinned entries.
 	 */
 	async function clearHistory() {
 		await invoke("clear_history").catch((r) => {
 			console.log(r);
 		});
-		cbEvents = [];
-		displayedEntries = [];
+		cbEvents = cbEvents.filter((event) => event.is_pinned);
+		// await invoke("load_history", { onEvent: historyChannel });
+
 		noItemText = "history cleared";
 		setTimeout(() => {
 			noItemText = "no items";
@@ -186,7 +190,7 @@
 			class="search"
 			bind:value={searchQuery}
 			bind:this={searchBar}
-			placeholder="press / to search" />
+			placeholder="press / to jump to search" />
 	</div>
 	<div class="feed" bind:this={feed}>
 		{#each filteredCbEvents as event, index (filteredCbEvents[index].id)}
@@ -240,19 +244,6 @@
 
 <style>
 	:root {
-		--bg-primary: #f6f6f6;
-		--bg-accent: #a9a9a9;
-		--bg-secondary: #eee;
-
-		--fg-primary: #0f0f0f;
-		--fg-accent: #999;
-
-		--entry-focus: #d6d6e1;
-		--entry-pinned: #fffcca;
-		--entry-pinned-focus: #dddaaf;
-
-		--black: #000; /* ehh */
-
 		font-family: system-ui;
 		font-size: 1rem;
 		color: var(--fg-primary);
@@ -332,22 +323,5 @@
 		justify-self: center;
 		font-size: 0.75rem;
 		color: var(--fg-accent);
-	}
-
-	@media (prefers-color-scheme: dark) {
-		:root {
-			--bg-primary: #0f0f0f;
-			--bg-secondary: #202020;
-			--bg-accent: #525252;
-
-			--fg-primary: #dedede;
-			--fg-accent: #828282;
-
-			--entry-focus: #39393d;
-			--entry-pinned: #565439;
-			--entry-pinned-focus: #43432c;
-
-			--black: #fff;
-		}
 	}
 </style>
