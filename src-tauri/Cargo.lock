@@ -4235,7 +4235,7 @@ dependencies = [
 
 [[package]]
 name = "squirrel"
-version = "0.4.0"
+version = "1.0.0"
 dependencies = [
  "active-win-pos-rs",
  "anyhow",
