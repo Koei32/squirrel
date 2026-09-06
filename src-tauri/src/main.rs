@@ -10,7 +10,7 @@ mod db;
 use anyhow::Result;
 use config::Config;
 use db::Database;
-use dirs::data_dir;
+use dirs::{config_dir, data_dir};
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, LazyLock, Mutex};
@@ -30,22 +30,17 @@ use tracing_subscriber::fmt::format::FmtSpan;
 static CONFIG: LazyLock<Arc<Mutex<Config>>> =
     LazyLock::new(|| Arc::new(Mutex::new(Config::default())));
 
-async fn run_tauri_app(silent: bool, mut data_dir: PathBuf) -> Result<()> {
+async fn run_tauri_app(silent: bool, mut data_dir: PathBuf, mut cfg_dir: PathBuf) -> Result<()> {
     // Configuration
-    data_dir.push("squirrel.toml");
-    let config = Config::load(&data_dir)?;
+    cfg_dir.push("squirrel.toml");
+    let config = Config::load(&cfg_dir)?;
     {
         let mut lock = CONFIG.lock().unwrap();
         *lock = config.clone();
     }
-    data_dir.pop();
     info!("Loaded config");
 
     // Database
-    if !data_dir.exists() {
-        create_dir_all(&data_dir)?;
-    }
-
     if cfg!(debug_assertions) {
         data_dir.push("data.dev.db");
     } else {
@@ -143,9 +138,16 @@ async fn run_tauri_app(silent: bool, mut data_dir: PathBuf) -> Result<()> {
 #[tokio::main]
 async fn main() -> Result<()> {
     let mut data_dir = data_dir().expect("Failed to get OS data directory");
+    let mut cfg_dir = config_dir().expect("Failed to get OS config directory");
+
     data_dir.push("Squirrel");
     if !data_dir.exists() {
         create_dir_all(&data_dir)?;
+    }
+
+    cfg_dir.push("Squirrel");
+    if !cfg_dir.exists() {
+        create_dir_all(&cfg_dir)?;
     }
 
     data_dir.push("logs");
@@ -181,7 +183,7 @@ async fn main() -> Result<()> {
         "--enable-smooth-scrolling",
     );
 
-    run_tauri_app(silent, data_dir).await?;
+    run_tauri_app(silent, data_dir, cfg_dir).await?;
     Ok(())
 }
 
