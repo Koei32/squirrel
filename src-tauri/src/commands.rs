@@ -7,8 +7,9 @@ use enigo::{Direction, Enigo, Key, Keyboard, Settings};
 use std::sync::atomic::{AtomicBool, Ordering::SeqCst};
 use std::time::Duration;
 use tauri::{ipc::Channel, State};
-// TODO: make a custom error type to return from tauri commands so that i dont
-// have to map_err everywhere like an amateur
+use tracing::info;
+// TODO: make a custom error type to return from tauri commands so that i dont have to map_err
+// everywhere like an amateur.
 
 /// Copies the item associated with the given id to the clipboard.
 #[tauri::command(async)]
@@ -30,11 +31,12 @@ pub async fn copy_item(
             .map_err(|e| e.to_string())?,
         CbEventContent::File(paths) => cb.set_files(paths).map_err(|e| e.to_string())?,
     };
+
+    info!(id = id, "Item copied to clipboard");
     Ok(())
 }
 
-/// Pastes the item associated with the given id via Ctrl+V shortcut emulation
-/// using Enigo.
+/// Pastes the item associated with the given id via Ctrl+V shortcut emulation using Enigo.
 #[tauri::command(async)]
 pub async fn paste_item(
     db: State<'_, Database>,
@@ -64,14 +66,18 @@ pub async fn paste_item(
     keyboard
         .key(Key::Unicode('v'), Direction::Release)
         .map_err(|e| e.to_string())?;
+
+    info!(id = id, "Item pasted");
     Ok(())
 }
 
+/// Sets an entry's pinned status.
 #[tauri::command(async)]
 pub async fn pin_entry(db: State<'_, Database>, id: i64, is_pinned: bool) -> Result<(), String> {
     db.set_pinned(id, is_pinned)
         .await
         .map_err(|e| e.to_string())?;
+    info!(id = id, pin_status = is_pinned, "Set pin status for entry");
     Ok(())
 }
 
@@ -79,6 +85,7 @@ pub async fn pin_entry(db: State<'_, Database>, id: i64, is_pinned: bool) -> Res
 #[tauri::command(async)]
 pub async fn remove_entry(db: State<'_, Database>, id: i64) -> Result<(), String> {
     db.remove_entry(id).await.map_err(|e| e.to_string())?;
+    info!(id = id, "Removed entry");
     Ok(())
 }
 
@@ -96,6 +103,7 @@ pub async fn load_history(
     db: State<'_, Database>,
     on_event: Channel<ClipboardEvent>,
 ) -> Result<(), String> {
+    info!("Loading history...");
     db.remove_expired().await.map_err(|e| e.to_string())?;
     let events = db.get_entries().await.map_err(|e| e.to_string())?;
 
@@ -109,6 +117,7 @@ pub async fn load_history(
 #[tauri::command(async)]
 pub async fn clear_history(db: State<'_, Database>) -> Result<(), String> {
     db.clear_entries(false).await.map_err(|e| e.to_string())?;
+    info!("Cleared all entries (except pinned)");
     Ok(())
 }
 

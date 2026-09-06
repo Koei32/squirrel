@@ -10,6 +10,8 @@ mod db;
 use anyhow::Result;
 use config::Config;
 use db::Database;
+use dirs::data_dir;
+use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, LazyLock, Mutex};
 use std::{ffi::OsStr, fs::create_dir_all};
@@ -21,32 +23,37 @@ use tauri::{
     Builder, Manager,
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use tracing::level_filters::LevelFilter;
+use tracing::{debug, error, info, warn};
+use tracing_subscriber::fmt::format::FmtSpan;
 
 static CONFIG: LazyLock<Arc<Mutex<Config>>> =
     LazyLock::new(|| Arc::new(Mutex::new(Config::default())));
 
-async fn run_tauri_app(silent: bool) -> Result<()> {
+async fn run_tauri_app(silent: bool, mut data_dir: PathBuf) -> Result<()> {
     // Configuration
-    let mut cfg_path = dirs::data_dir().expect("Failed to get config directory");
-    cfg_path.push("Squirrel");
-    if !cfg_path.exists() {
-        create_dir_all(&cfg_path)?;
-    }
-    cfg_path.push("squirrel.toml");
-    let config = Config::load(&cfg_path)?;
+    data_dir.push("squirrel.toml");
+    let config = Config::load(&data_dir)?;
     {
         let mut lock = CONFIG.lock().unwrap();
         *lock = config.clone();
     }
+    data_dir.pop();
+    info!("Loaded config");
 
     // Database
-    let mut db_url = dirs::data_dir().expect("Failed to get data directory");
-    db_url.push("Squirrel");
-    if !db_url.exists() {
-        create_dir_all(&db_url)?;
+    if !data_dir.exists() {
+        create_dir_all(&data_dir)?;
     }
-    db_url.push("data.db");
-    let db = Database::new(db_url.to_str().unwrap()).await?;
+
+    if cfg!(debug_assertions) {
+        data_dir.push("data.dev.db");
+    } else {
+        data_dir.push("data.db");
+    }
+
+    let db = Database::new(data_dir.to_str().unwrap()).await?;
+    info!("Connected to DB");
 
     // Whether or not to ignore clipboard events
     let skip_event = AtomicBool::new(false);
@@ -61,6 +68,8 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
 
             if !silent {
                 window.show()?;
+            } else {
+                info!("`--silent` is passed, launching silently");
             }
 
             // Tray icon setup
@@ -85,6 +94,7 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
                         println!("Unhandled menu item: {:?}", event.id);
                     }
                 });
+            debug!("Tray icon initialized");
 
             // State management
             app.manage(db);
@@ -105,9 +115,11 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
                     .build(),
             )?;
             app.global_shortcut().register(launch_hotkey)?;
+            debug!("Launch hotkey registered");
 
             // Start listener
             clipboard::start_clipboard_listener(app.handle().clone())?;
+            info!("Clipboard listener running");
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
@@ -130,7 +142,32 @@ async fn run_tauri_app(silent: bool) -> Result<()> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let mut data_dir = data_dir().expect("Failed to get OS data directory");
+    data_dir.push("Squirrel");
+    if !data_dir.exists() {
+        create_dir_all(&data_dir)?;
+    }
+
+    data_dir.push("logs");
+
+    let (non_blocking, _guard) = if cfg!(debug_assertions) {
+        tracing_appender::non_blocking(std::io::stdout())
+    } else {
+        tracing_appender::non_blocking(tracing_appender::rolling::daily(&data_dir, "squirrel.log"))
+    };
+    data_dir.pop();
+
+    let subscriber = tracing_subscriber::fmt();
+    subscriber
+        .with_span_events(FmtSpan::CLOSE)
+        .with_max_level(LevelFilter::DEBUG)
+        .with_writer(non_blocking)
+        .with_ansi(cfg!(debug_assertions))
+        .init();
+    debug!("Logging started");
+
     if is_dup_instance() {
+        error!("Another instance of Squirrel is already running, quitting.");
         return Ok(());
     }
 
@@ -144,7 +181,7 @@ async fn main() -> Result<()> {
         "--enable-smooth-scrolling",
     );
 
-    run_tauri_app(silent).await?;
+    run_tauri_app(silent, data_dir).await?;
     Ok(())
 }
 
