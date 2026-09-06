@@ -6,8 +6,8 @@ https://github.com/user-attachments/assets/f7e38954-1004-441e-b94b-679466037e30
 
 ## About
 
-Squirrel is _intended_ to be a cross-platform[*](#a-note-on-linux-support) clipboard manager that is simple and useful.
-It is made using Tauri with a Rust backend and Svelte for its frontend.
+Squirrel is a to be a clipboard manager for Windows and X11 Linux[*](#a-note-on-linux-support) that
+is simple and useful. It is made using Tauri with a Rust backend and Svelte for its frontend.
 
 Squirrel uses the [`clipboard-rs`](https://docs.rs/clipboard-rs/latest/clipboard_rs/) crate to
 interface with the operating system's clipboard in order to listen to and capture clipboard events.
