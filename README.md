@@ -6,26 +6,15 @@ https://github.com/user-attachments/assets/f7e38954-1004-441e-b94b-679466037e30
 
 ## About
 
-Squirrel is _intended_ to be a cross-platform\* clipboard manager that is simple and useful.
+Squirrel is _intended_ to be a cross-platform[*](###a-note-on-linux-support) clipboard manager that is simple and useful.
 It is made using Tauri with a Rust backend and Svelte for its frontend.
 
 Squirrel uses the [`clipboard-rs`](https://docs.rs/clipboard-rs/latest/clipboard_rs/) crate to
 interface with the operating system's clipboard in order to listen to and capture clipboard events.
 
-<small>\*work in progress</small>
-
 ## Features
 
 - **Global hotkey**: Press Ctrl+Shift+V to bring up Squirrel.
-
-- **Quick paste**: Selecting a clipboard item and pressing Return instantly pastes it into the
-  last focused window.
-
-<img width="600" height="338" alt="paste" src="https://github.com/user-attachments/assets/a08b4930-2d22-4dc8-8fbd-61f6bfa66b77" />
-
-- **Image Support**: In addition to text, Squirrel supports images of up to ~5 megabytes in size.
-
-<img width="600" height="338" alt="images" src="https://github.com/user-attachments/assets/5b8fde3d-0b2e-4d07-b4d2-0d9ba9bcb4d0" />
 
 - **Pinning**: Pin important items to the top of the list.
 
@@ -35,16 +24,22 @@ interface with the operating system's clipboard in order to listen to and captur
 
 <img width="600" height="338" alt="search" src="https://github.com/user-attachments/assets/3fd53219-55e1-4f71-81db-9015e2fb4396" />
 
-- **Dark/light theme**: Squirrel uses the theme of your system.
+- **Image Support**: In addition to text, Squirrel supports images of up to ~5 megabytes in size.
 
-<img width="600" alt="darklight" src="https://github.com/user-attachments/assets/50d20dd9-e3f4-43d2-a1e3-6c0b74663f0b" />
+<img width="600" height="338" alt="images" src="https://github.com/user-attachments/assets/5b8fde3d-0b2e-4d07-b4d2-0d9ba9bcb4d0" />
+
+- **Configuration**: Squirrel allows basic app configuration. Configuration file is stored at
+  `%appdata%/Squirrel/squirrel.toml` for Windows and `~/.config/Squirrel/squirrel.toml` for Linux.
+  Check `default.toml` for available options.
 
 - **_Technically_ unlimited history**:
-  There isn't a defined limit to the amount of entries that can be stored. Store as much as you want.
-  Though practically, the program might load the history a bit slowly when there's a very large
-  amount of items.
+  There isn't a defined limit to the amount of entries that can be stored. Store as much as you
+  want. Though practically, the program might load the history a bit slowly when there's a very
+  large amount of items.
 
 ### Shortcuts
+
+We love them
 
 - `Ctrl` `Shift` `V`: show Squirrel
 - `Esc`: hide Squirrel
@@ -59,8 +54,8 @@ interface with the operating system's clipboard in order to listen to and captur
 ## Installation
 
 The latest build is available in Releases. Squirrel is distributed as both a single file executable
-and a bundled installer. If the portable version does not work, it's recommended to install Squirrel
-using the appropriate installer.
+and a bundled installer. If the portable version does not work, it's recommended to install
+Squirrel using the appropriate installer.
 
 ### A note on Linux support
 
@@ -81,8 +76,8 @@ You can also build Squirrel from source for your operating system.
 
 ### Requirements:
 
-- Rust >=1.95
-- npm >=11.13.0
+- **Rust** >=1.95
+- **npm** >=11.13.0
 
 Older versions might work, though are untested.
 
@@ -110,14 +105,4 @@ The executable is output in `src-tauri/target/release/`, and the bundles in `src
 
 ## Credits
 
-All icons except the Squirrel logo are Copyright (c) 2026 Lucide Icons and Contributors (https://lucide.dev/)
-
-### TODO
-
-- [ ] proper linux support & testing
-- [x] pinning entries
-- [x] image support
-- [ ] file support
-- [x] lazy loading history
-- [ ] custom data storage format (?)
-- [ ] mac support (?)
+All icons except the Squirrel logo are Copyright (c) 2026 [Lucide Icons and Contributors](https://lucide.dev/)
