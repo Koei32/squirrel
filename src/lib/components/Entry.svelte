@@ -160,21 +160,23 @@
 				<span class="content-loading-text">loading image...</span>
 			{/if}
 		{:else if cbEvent.content.type == CbEventType.File}
-			{#if cbEvent.content.data}
-				{#each cbEvent.content.data as filepath}
-					<span
-						role="button"
-						tabindex="-1"
-						class="filepath"
-						onkeydown={() => {}}
-						onclick={() => {
-							invoke("reveal_in_explorer", { file: filepath });
-						}}>{filepath}</span>
-					<br />
-				{/each}
-			{:else}
-				<span class="content-loading-text">loading files...</span>
-			{/if}
+			<div class="filepath-container">
+				{#if cbEvent.content.data}
+					{#each cbEvent.content.data as filepath}
+						<span
+							role="button"
+							tabindex="-1"
+							class="filepath"
+							title={filepath}
+							onkeydown={() => {}}
+							onclick={() => {
+								invoke("reveal_in_explorer", { file: filepath });
+							}}>{filepath}</span>
+					{/each}
+				{:else}
+					<span class="content-loading-text">loading files...</span>
+				{/if}
+			</div>
 		{/if}
 	</div>
 	<div class="footer">
@@ -335,8 +337,19 @@
 		align-items: center;
 	}
 
+	.filepath-container {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+	}
+
 	.filepath {
+		display: block;
+		width: 100%;
+		white-space: nowrap;
+		overflow: hidden;
 		text-decoration: underline;
+		text-overflow: ellipsis;
 		cursor: pointer;
 	}
 
