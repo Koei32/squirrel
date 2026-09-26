@@ -20,7 +20,7 @@ anyhow = "1.0.102"
 base64 = "0.23.0"
 chrono = "0.4.44"
 clipboard-rs = "0.3.4"
-dirs = "6.0.0"
+dirs = "7.0.0"
 enigo = "0.6.1"
 log = "0.4.34"
 serde = { version = "1", features = ["derive"] }
