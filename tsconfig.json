@@ -3,6 +3,10 @@
 	"include": ["src/**/*", "static/**/*", "tests/**/*"],
 	"exclude": ["node_modules/**", "src/service-worker.js", "src/service-worker.d.ts"],
 	"compilerOptions": {
+		"paths": {
+			"$lib": ["./src/lib"],
+			"$lib/*": ["./src/lib/*"]
+		},
 		"allowJs": true,
 		"checkJs": true,
 		"esModuleInterop": true,
