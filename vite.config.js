@@ -11,7 +11,7 @@ export default defineConfig(async () => ({
 		sveltekit({
 			preprocess: vitePreprocess(),
 			adapter: adapter(),
-		})
+		}),
 	],
 
 	// Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
