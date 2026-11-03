@@ -25,7 +25,7 @@ enigo = "0.6.1"
 log = "0.4.34"
 serde = { version = "1", features = ["derive"] }
 sqlx = { version = "0.9.0", features = ["sqlite", "runtime-tokio", "macros"] }
-sysinfo = "0.39.5"
+sysinfo = "0.40.1"
 tauri = {  version = "2.0.0", features = [ "tray-icon", "image-png" ] }
 tauri-plugin-opener = "2"
 tauri-plugin-prevent-default = "6"
